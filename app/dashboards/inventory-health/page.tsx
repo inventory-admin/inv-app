@@ -34,8 +34,8 @@ export default async function InventoryHealthDashboard() {
         defective,
       }
     })
-    .filter((s) => s.defective > 0)
-    .sort((a, b) => b.defective - a.defective)
+    .filter((s: { defective: number }) => s.defective > 0)
+    .sort((a: { defective: number }, b: { defective: number }) => b.defective - a.defective)
     .slice(0, 10)
 
   // Items with most issues (grouped by category)
@@ -57,8 +57,8 @@ export default async function InventoryHealthDashboard() {
       defective: stats.defective,
       percentage: Math.round((stats.defective / stats.total) * 100),
     }))
-    .filter((c) => c.defective > 0)
-    .sort((a, b) => b.defective - a.defective)
+    .filter((c: { defective: number }) => c.defective > 0)
+    .sort((a: { defective: number }, b: { defective: number }) => b.defective - a.defective)
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
