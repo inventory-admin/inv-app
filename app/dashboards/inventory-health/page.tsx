@@ -83,7 +83,7 @@ export default async function InventoryHealthDashboard() {
               <p className="text-gray-500 text-center py-8">No schools with problems found</p>
             ) : (
               <div className="space-y-4">
-                {schoolProblems.map((school, index) => (
+                {schoolProblems.map((school: { id: number; name: string; total: number; defective: number }, index: number) => (
                   <div key={school.id} className="border rounded-lg p-4 hover:shadow-md transition">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-3">
@@ -143,7 +143,7 @@ export default async function InventoryHealthDashboard() {
               <p className="text-gray-500 text-center py-8">No items with issues found</p>
             ) : (
               <div className="space-y-4">
-                {categoryProblems.map((cat, index) => (
+                {categoryProblems.map((cat: { category: string; total: number; defective: number; percentage: number }, index: number) => (
                   <div key={cat.category} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-3">
