@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model School {
+  id        Int         @id @default(autoincrement())
+  schoolId  String?     @unique
+  name      String      @unique
+  createdAt DateTime    @default(now())
+  inventory Inventory[]
+  issues    Issue[]
+}
+
+model Inventory {
+  id             Int       @id @default(autoincrement())
+  itemId         String?   @unique
+  itemName       String
+  category       Category
+  location       Location  @default(IN_OFFICE)
+  condition      Condition @default(WORKING)
+  quantity       Int       @default(1)
+  minStockLevel  Int?
+  itemTag        String?
+  schoolId       Int?
+  school         School?   @relation(fields: [schoolId], references: [id])
+  notes          String?
+  lastModifiedBy String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  issues         Issue[]
+}
+
+enum Location {
+  IN_OFFICE
+  AT_SCHOOL
+  DISCARDED
+}
+
+enum Category {
+  UPS
+  KEYBOARD
+  MOUSE
+  CPU
+  SCREEN
+}
+
+enum Condition {
+  WORKING
+  NOT_WORKING
+  DAMAGED
+  DISCARDED
+}
+
+model Issue {
+  id          Int         @id @default(autoincrement())
+  inventoryId Int
+  inventory   Inventory   @relation(fields: [inventoryId], references: [id])
+  schoolId    Int?
+  school      School?     @relation(fields: [schoolId], references: [id])
+  issueType   IssueType
+  description String
+  status      IssueStatus @default(OPEN)
+  reportedBy  String
+  reportedAt  DateTime    @default(now())
+  resolvedAt  DateTime?
+}
+
+enum IssueType {
+  HARDWARE_FAILURE
+  SOFTWARE_ISSUE
+  PHYSICAL_DAMAGE
+  MISSING
+  OTHER
+}
+
+enum IssueStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
