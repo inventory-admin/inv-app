@@ -15,8 +15,8 @@ export default async function SchoolDetailPage({ params }: { params: { id: strin
 
   if (!school) notFound()
 
-  const working = school.inventory.filter((i) => i.location === 'AT_SCHOOL' && i.condition === 'WORKING')
-  const broken = school.inventory.filter((i) => i.location === 'AT_SCHOOL' && (i.condition === 'NOT_WORKING' || i.condition === 'DAMAGED'))
+  const working = school.inventory.filter((i: any) => i.location === 'AT_SCHOOL' && i.condition === 'WORKING')
+  const broken = school.inventory.filter((i: any) => i.location === 'AT_SCHOOL' && (i.condition === 'NOT_WORKING' || i.condition === 'DAMAGED'))
 
   return (
     <div className="p-8">
@@ -62,7 +62,7 @@ export default async function SchoolDetailPage({ params }: { params: { id: strin
                 </td>
               </tr>
             ) : (
-              school.inventory.map((item) => (
+              school.inventory.map((item: any) => (
                 <tr key={item.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{item.itemName}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
