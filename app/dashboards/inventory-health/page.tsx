@@ -23,9 +23,9 @@ export default async function InventoryHealthDashboard() {
 
   // Schools with most problems
   const schoolProblems = schools
-    .map((school) => {
+    .map((school: any) => {
       const defective = school.inventory.filter(
-        (item) => item.condition === 'NOT_WORKING' || item.condition === 'DAMAGED' || item.condition === 'DISCARDED'
+        (item: any) => item.condition === 'NOT_WORKING' || item.condition === 'DAMAGED' || item.condition === 'DISCARDED'
       ).length
       return {
         id: school.id,
@@ -39,7 +39,7 @@ export default async function InventoryHealthDashboard() {
     .slice(0, 10)
 
   // Items with most issues (grouped by category)
-  const categoryStats = inventory.reduce((acc, item) => {
+  const categoryStats = inventory.reduce((acc: any, item: any) => {
     if (!acc[item.category]) {
       acc[item.category] = { total: 0, defective: 0 }
     }
@@ -50,7 +50,7 @@ export default async function InventoryHealthDashboard() {
     return acc
   }, {} as Record<string, { total: number; defective: number }>)
 
-  const categoryProblems = Object.entries(categoryStats)
+  const categoryProblems = (Object.entries(categoryStats) as [string, { total: number; defective: number }][])
     .map(([category, stats]) => ({
       category,
       total: stats.total,
