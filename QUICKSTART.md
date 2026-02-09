@@ -5,7 +5,7 @@ The MVP is ready to run!
 ## Start the App
 
 ```bash
-cd /home/kochhk/inv/inv-app
+cd ~/inv-app
 npm run dev
 ```
 

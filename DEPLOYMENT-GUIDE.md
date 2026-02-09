@@ -15,14 +15,14 @@ You'll need to copy all files except:
 ```bash
 # From your local machine
 rsync -avz --exclude='node_modules' --exclude='.next' --exclude='prisma/dev.db' \
-  /home/kochhk/inv/inv-app/ \
+  ~/inv-app/ \
   ec2-user@<YOUR-EC2-IP>:~/environment/inv-app/
 ```
 
 ### Using SCP
 ```bash
 # Create tar file excluding node_modules
-cd /home/kochhk/inv
+cd ~
 tar --exclude='node_modules' --exclude='.next' --exclude='prisma/dev.db' \
   -czf inv-app-update.tar.gz inv-app/
 

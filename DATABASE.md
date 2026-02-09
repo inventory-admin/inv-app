@@ -51,7 +51,7 @@ sqlite3 prisma/dev.db "SELECT COUNT(*) FROM Inventory;"
 cp prisma/dev.db prisma/dev.db.backup
 ```
 
-**Your data is in:** `/home/kochhk/inv/inv-app/prisma/dev.db`
+**Your data is in:** `~/inv-app/prisma/dev.db`
 
 ---
 

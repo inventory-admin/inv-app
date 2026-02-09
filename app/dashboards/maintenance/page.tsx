@@ -20,8 +20,8 @@ export default async function MaintenanceDashboard() {
     orderBy: { updatedAt: 'desc' },
   })
 
-  const criticalItems = defectiveItems.filter((item) => item.condition === 'NOT_WORKING')
-  const damagedItems = defectiveItems.filter((item) => item.condition === 'DAMAGED')
+  const criticalItems = defectiveItems.filter((item: any) => item.condition === 'NOT_WORKING')
+  const damagedItems = defectiveItems.filter((item: any) => item.condition === 'DAMAGED')
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -82,7 +82,7 @@ export default async function MaintenanceDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {defectiveItems.map((item) => {
+                  {defectiveItems.map((item: any) => {
                     const latestIssue = item.issues[0]
                     return (
                       <tr key={item.id} className="hover:bg-gray-50">

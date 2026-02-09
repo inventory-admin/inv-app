@@ -27,7 +27,7 @@ Complete guide to deploy your NGO Inventory app to production.
 ### Step 1: Push Code to GitHub (5 min)
 
 ```bash
-cd /home/kochhk/inv/inv-app
+cd ~/inv-app
 
 # Initialize git (if not already)
 git init
