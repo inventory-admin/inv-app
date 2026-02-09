@@ -10,8 +10,8 @@ export default async function IssuesPage() {
     orderBy: { reportedAt: 'desc' },
   })
 
-  const openIssues = issues.filter((i) => i.status === 'OPEN' || i.status === 'IN_PROGRESS')
-  const resolvedIssues = issues.filter((i) => i.status === 'RESOLVED' || i.status === 'CLOSED')
+  const openIssues = issues.filter((i: any) => i.status === 'OPEN' || i.status === 'IN_PROGRESS')
+  const resolvedIssues = issues.filter((i: any) => i.status === 'RESOLVED' || i.status === 'CLOSED')
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -59,7 +59,7 @@ export default async function IssuesPage() {
             </p>
           ) : (
             <div className="divide-y divide-gray-200">
-              {openIssues.map((issue) => (
+              {openIssues.map((issue: any) => (
                 <div key={issue.id} className="p-6 hover:bg-gray-50">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
@@ -118,7 +118,7 @@ export default async function IssuesPage() {
             </div>
 
             <div className="divide-y divide-gray-200">
-              {resolvedIssues.map((issue) => (
+              {resolvedIssues.map((issue: any) => (
                 <div key={issue.id} className="p-6 hover:bg-gray-50 opacity-75">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
