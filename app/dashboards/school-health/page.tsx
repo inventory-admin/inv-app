@@ -38,10 +38,10 @@ export default function SchoolHealthDashboard() {
       .then((data: School[]) => {
         setSchools(data)
         
-        const stats = data.map((school) => {
-          const items = school.inventory.filter((item) => item.location === 'AT_SCHOOL')
+        const stats = data.map((school: School) => {
+          const items = school.inventory.filter((item: any) => item.location === 'AT_SCHOOL')
           const total = items.length
-          const working = items.filter((item) => item.condition === 'WORKING').length
+          const working = items.filter((item: any) => item.condition === 'WORKING').length
           const defective = total - working
           const healthScore = total > 0 ? Math.round((working / total) * 100) : 100
           
@@ -59,7 +59,7 @@ export default function SchoolHealthDashboard() {
             healthScore,
             status,
             atSchool: items.length,
-            inOffice: school.inventory.filter((item) => item.location === 'IN_OFFICE').length,
+            inOffice: school.inventory.filter((item: any) => item.location === 'IN_OFFICE').length,
           }
         })
 

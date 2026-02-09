@@ -14,15 +14,15 @@ export default async function OverviewDashboard() {
 
   const totalItems = inventory.length
   const healthyItems = inventory.filter(
-    (item) => item.condition === 'WORKING'
+    (item: any) => item.condition === 'WORKING'
   ).length
   const defectiveItems = inventory.filter(
-    (item) => item.condition === 'NOT_WORKING' || item.condition === 'DAMAGED' || item.condition === 'DISCARDED'
+    (item: any) => item.condition === 'NOT_WORKING' || item.condition === 'DAMAGED' || item.condition === 'DISCARDED'
   ).length
 
-  const atSchools = inventory.filter((item) => item.location === 'AT_SCHOOL').length
-  const inOffice = inventory.filter((item) => item.location === 'IN_OFFICE').length
-  const discarded = inventory.filter((item) => item.location === 'DISCARDED').length
+  const atSchools = inventory.filter((item: any) => item.location === 'AT_SCHOOL').length
+  const inOffice = inventory.filter((item: any) => item.location === 'IN_OFFICE').length
+  const discarded = inventory.filter((item: any) => item.location === 'DISCARDED').length
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
