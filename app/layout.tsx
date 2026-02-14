@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NGO Inventory Management",
-  description: "Simple inventory tracking for schools",
+  title: "Edumust Inventory Management",
 };
 
 export default function RootLayout({

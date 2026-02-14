@@ -1,12 +1,22 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="p-8 max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-gray-800 mb-3">NGO Inventory Management</h1>
-          <p className="text-gray-600 text-lg">Manage schools and track device inventory efficiently</p>
+          <div className="flex justify-center mb-6">
+            <Image 
+              src="/edumust-logo.png" 
+              alt="Edumust Logo" 
+              width={120} 
+              height={120}
+              className="rounded-lg shadow-md"
+              priority
+            />
+          </div>
+          <h1 className="text-5xl font-bold text-gray-800 mb-3">Edumust Inventory Management</h1>
         </div>
         
         {/* View Dashboards Section */}
