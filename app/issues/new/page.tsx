@@ -30,12 +30,14 @@ function NewIssueForm() {
       fetch('/api/inventory-list').then((res) => res.json()),
       fetch('/api/schools-list').then((res) => res.json()),
     ]).then(([inventoryData, schoolsData]) => {
-      setInventory(inventoryData)
-      setFilteredInventory(inventoryData)
-      setSchools(schoolsData)
+      const invArray = Array.isArray(inventoryData) ? inventoryData : []
+      const schArray = Array.isArray(schoolsData) ? schoolsData : []
+      setInventory(invArray)
+      setFilteredInventory(invArray)
+      setSchools(schArray)
       
       if (inventoryId) {
-        const item = inventoryData.find((i: any) => i.id.toString() === inventoryId)
+        const item = invArray.find((i: any) => i.id.toString() === inventoryId)
         setSelectedItem(item)
         setFormData(prev => ({ ...prev, inventoryId: inventoryId }))
       }

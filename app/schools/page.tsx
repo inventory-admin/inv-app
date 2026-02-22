@@ -1,20 +1,36 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
+// Cache configuration - Change this to adjust dashboard update delay
+const CACHE_SECONDS = 10
+
+export const dynamic = 'force-dynamic'
+export const revalidate = CACHE_SECONDS
+
 export default async function SchoolsPage() {
   const schools = await prisma.school.findMany({
     include: {
-      inventory: true,
+      inventory: {
+        include: {
+          issues: {
+            where: { status: { in: ['OPEN', 'IN_PROGRESS'] } }
+          }
+        }
+      },
     },
     orderBy: { name: 'asc' },
   })
 
-  const schoolsWithStats = schools.map((school) => ({
-    ...school,
-    total: school.inventory.length,
-    working: school.inventory.filter((i) => i.location === 'AT_SCHOOL' && i.condition === 'WORKING').length,
-    broken: school.inventory.filter((i) => i.location === 'AT_SCHOOL' && (i.condition === 'NOT_WORKING' || i.condition === 'DAMAGED')).length,
-  }))
+  const schoolsWithStats = schools.map((school) => {
+    const itemsWithIssues = school.inventory.filter((i) => i.issues.length > 0).length
+    return {
+      ...school,
+      total: school.inventory.length,
+      working: school.inventory.filter((i) => i.location === 'AT_SCHOOL' && i.condition === 'WORKING').length,
+      broken: school.inventory.filter((i) => i.location === 'AT_SCHOOL' && (i.condition === 'NOT_WORKING' || i.condition === 'DAMAGED')).length,
+      withIssues: itemsWithIssues,
+    }
+  })
 
   return (
     <div className="p-8">
@@ -48,6 +64,10 @@ export default async function SchoolsPage() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Broken:</span>
                 <span className="font-semibold text-red-600">{school.broken}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">With Issues:</span>
+                <span className="font-semibold text-orange-600">{school.withIssues}</span>
               </div>
             </div>
           </Link>

@@ -11,7 +11,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "db:up": "docker run -d --name inv-postgres -e POSTGRES_DB=inventory -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -v inv_postgres_data:/var/lib/postgresql/data postgres:15 || docker start inv-postgres",
+    "db:down": "docker stop inv-postgres || true",
+    "db:setup": "prisma migrate dev && npm run seed",
+    "db:reset": "prisma migrate reset --force && npm run seed",
+    "dev:setup": "npm run db:up && sleep 5 && npm run db:setup"
   },
   "dependencies": {
     "@prisma/client": "^6.19.1",

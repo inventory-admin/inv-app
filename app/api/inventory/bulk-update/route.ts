@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 
 export async function POST(request: Request) {
   try {
@@ -28,6 +29,10 @@ export async function POST(request: Request) {
       },
       data: updateData,
     })
+
+    // Revalidate essential pages only
+    revalidatePath('/inventory')
+    revalidatePath('/schools')
 
     return NextResponse.json({ success: true, updated: itemIds.length })
   } catch (error) {

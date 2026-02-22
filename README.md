@@ -1,6 +1,6 @@
-# NGO Inventory Management App
+# Edumust Inventory Management App
 
-Simple inventory tracking system for managing devices across schools.
+Manage schools and track device inventory efficiently for Edumust - a not-for-profit organization dedicated to transforming the lives of government school students through digital literacy.
 
 ## Quick Start
 
@@ -143,6 +143,10 @@ DATABASE_URL="postgresql://..."  # For production
 - Filters and search
 - Email notifications
 
+## About Edumust
+
+Edumust is a not-for-profit organization based in Jalandhar, Punjab, dedicated to bridging the digital divide by empowering government school students with essential digital literacy skills.
+
 ## License
 
-Internal NGO tool - not for public distribution
+Internal tool for Edumust - not for public distribution

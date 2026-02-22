@@ -1,64 +1,86 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
+// Cache configuration - Change this to adjust dashboard update delay
+const CACHE_SECONDS = 10
+
+export const dynamic = 'force-dynamic'
+export const revalidate = CACHE_SECONDS
+
 export default async function InventoryHealthDashboard() {
   const [schools, inventory] = await Promise.all([
     prisma.school.findMany({
       include: {
         inventory: {
-          select: {
-            condition: true,
-            category: true,
-          },
+          include: {
+            issues: {
+              where: { status: { in: ['OPEN', 'IN_PROGRESS'] } }
+            }
+          }
         },
       },
     }),
     prisma.inventory.findMany({
-      select: {
-        category: true,
-        condition: true,
-      },
+      include: {
+        issues: {
+          where: { status: { in: ['OPEN', 'IN_PROGRESS'] } }
+        }
+      }
     }),
   ])
 
-  // Schools with most problems
+  // Schools with most problems (defective items + open issues)
   const schoolProblems = schools
     .map((school: any) => {
       const defective = school.inventory.filter(
         (item: any) => item.condition === 'NOT_WORKING' || item.condition === 'DAMAGED' || item.condition === 'DISCARDED'
       ).length
+      const withIssues = school.inventory.filter(
+        (item: any) => item.issues.length > 0
+      ).length
+      const totalProblems = Math.max(defective, withIssues) // Avoid double counting
       return {
         id: school.id,
         name: school.name,
         total: school.inventory.length,
         defective,
+        withIssues,
+        totalProblems,
       }
     })
-    .filter((s: { defective: number }) => s.defective > 0)
-    .sort((a: { defective: number }, b: { defective: number }) => b.defective - a.defective)
+    .filter((s: { totalProblems: number }) => s.totalProblems > 0)
+    .sort((a: { totalProblems: number }, b: { totalProblems: number }) => b.totalProblems - a.totalProblems)
     .slice(0, 10)
 
   // Items with most issues (grouped by category)
   const categoryStats = inventory.reduce((acc: any, item: any) => {
     if (!acc[item.category]) {
-      acc[item.category] = { total: 0, defective: 0 }
+      acc[item.category] = { total: 0, defective: 0, withIssues: 0 }
     }
     acc[item.category].total++
     if (item.condition === 'NOT_WORKING' || item.condition === 'DAMAGED' || item.condition === 'DISCARDED') {
       acc[item.category].defective++
     }
+    if (item.issues.length > 0) {
+      acc[item.category].withIssues++
+    }
     return acc
-  }, {} as Record<string, { total: number; defective: number }>)
+  }, {} as Record<string, { total: number; defective: number; withIssues: number }>)
 
-  const categoryProblems = (Object.entries(categoryStats) as [string, { total: number; defective: number }][])
-    .map(([category, stats]) => ({
-      category,
-      total: stats.total,
-      defective: stats.defective,
-      percentage: Math.round((stats.defective / stats.total) * 100),
-    }))
-    .filter((c: { defective: number }) => c.defective > 0)
-    .sort((a: { defective: number }, b: { defective: number }) => b.defective - a.defective)
+  const categoryProblems = (Object.entries(categoryStats) as [string, { total: number; defective: number; withIssues: number }][])
+    .map(([category, stats]) => {
+      const totalProblems = Math.max(stats.defective, stats.withIssues)
+      return {
+        category,
+        total: stats.total,
+        defective: stats.defective,
+        withIssues: stats.withIssues,
+        totalProblems,
+        percentage: Math.round((totalProblems / stats.total) * 100),
+      }
+    })
+    .filter((c: { totalProblems: number }) => c.totalProblems > 0)
+    .sort((a: { totalProblems: number }, b: { totalProblems: number }) => b.totalProblems - a.totalProblems)
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -108,21 +130,24 @@ export default async function InventoryHealthDashboard() {
                         </Link>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-red-600">{school.defective}</div>
-                        <div className="text-xs text-gray-500">defective items</div>
+                        <div className="text-2xl font-bold text-red-600">{school.totalProblems}</div>
+                        <div className="text-xs text-gray-500">items with problems</div>
                       </div>
                     </div>
                     <div className="flex justify-between text-sm text-gray-600">
                       <span>Total devices: {school.total}</span>
                       <span>
-                        {Math.round((school.defective / school.total) * 100)}% defective
+                        {Math.round((school.totalProblems / school.total) * 100)}% with problems
                       </span>
+                    </div>
+                    <div className="text-xs text-gray-500 mb-2">
+                      {school.defective} defective • {school.withIssues} with open issues
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                       <div
                         className="bg-red-500 h-2 rounded-full"
                         style={{
-                          width: `${(school.defective / school.total) * 100}%`,
+                          width: `${(school.totalProblems / school.total) * 100}%`,
                         }}
                       ></div>
                     </div>
@@ -163,13 +188,16 @@ export default async function InventoryHealthDashboard() {
                         <div className="text-lg font-semibold text-gray-800">{cat.category}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-red-600">{cat.defective}</div>
-                        <div className="text-xs text-gray-500">defective</div>
+                        <div className="text-2xl font-bold text-red-600">{cat.totalProblems}</div>
+                        <div className="text-xs text-gray-500">with problems</div>
                       </div>
                     </div>
                     <div className="flex justify-between text-sm text-gray-600">
                       <span>Total: {cat.total} items</span>
-                      <span>{cat.percentage}% defective rate</span>
+                      <span>{cat.percentage}% problem rate</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mb-2">
+                      {cat.defective} defective • {cat.withIssues} with open issues
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                       <div
@@ -197,13 +225,13 @@ export default async function InventoryHealthDashboard() {
             {schoolProblems.length > 0 && (
               <li>
                 • Focus maintenance efforts on <strong>{schoolProblems[0].name}</strong> which has{' '}
-                {schoolProblems[0].defective} defective items
+                {schoolProblems[0].totalProblems} items with problems
               </li>
             )}
             {categoryProblems.length > 0 && (
               <li>
                 • Consider reviewing <strong>{categoryProblems[0].category}</strong> procurement as
-                it has the highest defect rate ({categoryProblems[0].percentage}%)
+                it has the highest problem rate ({categoryProblems[0].percentage}%)
               </li>
             )}
             {schoolProblems.length === 0 && categoryProblems.length === 0 && (

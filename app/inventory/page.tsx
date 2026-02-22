@@ -26,15 +26,19 @@ export default function InventoryPage() {
   const [filterLocation, setFilterLocation] = useState('all')
   const [filterCondition, setFilterCondition] = useState('all')
   const [filterSchool, setFilterSchool] = useState('all')
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       fetch('/api/inventory-list').then((res) => res.json()),
       fetch('/api/schools-list').then((res) => res.json()),
     ]).then(([inventoryData, schoolsData]) => {
-      setItems(inventoryData)
-      setFilteredItems(inventoryData)
-      setSchools(schoolsData)
+      const invArray = Array.isArray(inventoryData) ? inventoryData : []
+      const schArray = Array.isArray(schoolsData) ? schoolsData : []
+      setItems(invArray)
+      setFilteredItems(invArray)
+      setSchools(schArray)
+      setIsLoading(false)
     })
   }, [])
 
@@ -110,28 +114,28 @@ export default function InventoryPage() {
         <div className="grid gap-6 md:grid-cols-4 mb-8">
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-blue-500">
             <div className="text-gray-500 text-sm font-medium mb-2">Total Devices</div>
-            <div className="text-4xl font-bold text-blue-600">{totalItems}</div>
-            <div className="text-xs text-gray-500 mt-1">{items.length} unique items</div>
+            <div className="text-4xl font-bold text-blue-600">{isLoading ? '...' : totalItems}</div>
+            <div className="text-xs text-gray-500 mt-1">{isLoading ? '...' : items.length} unique items</div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-green-500">
             <div className="text-gray-500 text-sm font-medium mb-2">Working Devices</div>
-            <div className="text-4xl font-bold text-green-600">{workingItems}</div>
+            <div className="text-4xl font-bold text-green-600">{isLoading ? '...' : workingItems}</div>
             <div className="text-xs text-gray-500 mt-1">
-              {totalItems > 0 ? Math.round((workingItems / totalItems) * 100) : 0}% of total
+              {isLoading ? '...' : (totalItems > 0 ? Math.round((workingItems / totalItems) * 100) : 0)}% of total
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-red-500">
             <div className="text-gray-500 text-sm font-medium mb-2">Not Working</div>
-            <div className="text-4xl font-bold text-red-600">{notWorkingItems}</div>
+            <div className="text-4xl font-bold text-red-600">{isLoading ? '...' : notWorkingItems}</div>
             <div className="text-xs text-gray-500 mt-1">Need attention</div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-purple-500">
             <div className="text-gray-500 text-sm font-medium mb-2">At Schools</div>
-            <div className="text-4xl font-bold text-purple-600">{atSchools}</div>
-            <div className="text-xs text-gray-500 mt-1">{inOffice} in office</div>
+            <div className="text-4xl font-bold text-purple-600">{isLoading ? '...' : atSchools}</div>
+            <div className="text-xs text-gray-500 mt-1">{isLoading ? '...' : inOffice} in office</div>
           </div>
         </div>
 

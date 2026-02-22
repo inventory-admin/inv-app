@@ -1,7 +1,14 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
+// Cache configuration - Change this to adjust dashboard update delay
+const CACHE_SECONDS = 10
+
+export const dynamic = 'force-dynamic'
+export const revalidate = CACHE_SECONDS
+
 export default async function MaintenanceDashboard() {
+  // Get items with defective conditions
   const defectiveItems = await prisma.inventory.findMany({
     where: {
       OR: [
@@ -20,8 +27,41 @@ export default async function MaintenanceDashboard() {
     orderBy: { updatedAt: 'desc' },
   })
 
-  const criticalItems = defectiveItems.filter((item: any) => item.condition === 'NOT_WORKING')
-  const damagedItems = defectiveItems.filter((item: any) => item.condition === 'DAMAGED')
+  // Get items with open issues (regardless of condition)
+  const itemsWithIssues = await prisma.inventory.findMany({
+    where: {
+      issues: {
+        some: {
+          status: { in: ['OPEN', 'IN_PROGRESS'] }
+        }
+      }
+    },
+    include: {
+      school: true,
+      issues: {
+        where: { status: { in: ['OPEN', 'IN_PROGRESS'] } },
+        orderBy: { reportedAt: 'desc' },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+  })
+
+  // Combine and deduplicate items
+  const allMaintenanceItems = [...defectiveItems]
+  itemsWithIssues.forEach(item => {
+    if (!allMaintenanceItems.find(existing => existing.id === item.id)) {
+      allMaintenanceItems.push(item)
+    }
+  })
+
+  const criticalItems = allMaintenanceItems.filter((item: any) => 
+    item.condition === 'NOT_WORKING' || 
+    item.issues.some((issue: any) => issue.issueType === 'HARDWARE_FAILURE')
+  )
+  const damagedItems = allMaintenanceItems.filter((item: any) => item.condition === 'DAMAGED')
+  const itemsWithOpenIssues = allMaintenanceItems.filter((item: any) => 
+    item.issues.some((issue: any) => ['OPEN', 'IN_PROGRESS'].includes(issue.status))
+  )
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -35,29 +75,35 @@ export default async function MaintenanceDashboard() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-red-500">
-            <div className="text-gray-500 text-sm font-medium mb-2">Critical (Not Working)</div>
+            <div className="text-gray-500 text-sm font-medium mb-2">Critical Items</div>
             <div className="text-4xl font-bold text-red-600">{criticalItems.length}</div>
-            <div className="text-xs text-gray-500 mt-1">Requires immediate attention</div>
+            <div className="text-xs text-gray-500 mt-1">Not working or hardware failure</div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-orange-500">
-            <div className="text-gray-500 text-sm font-medium mb-2">Damaged (Still Working)</div>
+            <div className="text-gray-500 text-sm font-medium mb-2">Damaged Items</div>
             <div className="text-4xl font-bold text-orange-600">{damagedItems.length}</div>
-            <div className="text-xs text-gray-500 mt-1">Monitor for degradation</div>
+            <div className="text-xs text-gray-500 mt-1">Still working but damaged</div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-yellow-500">
+            <div className="text-gray-500 text-sm font-medium mb-2">Open Issues</div>
+            <div className="text-4xl font-bold text-yellow-600">{itemsWithOpenIssues.length}</div>
+            <div className="text-xs text-gray-500 mt-1">Items with reported issues</div>
           </div>
         </div>
 
-        {/* Defective Items List */}
+        {/* Maintenance Items List */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-6 border-b">
-            <h2 className="text-2xl font-bold text-gray-800">All Defective Items</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Items Requiring Attention</h2>
           </div>
 
-          {defectiveItems.length === 0 ? (
+          {allMaintenanceItems.length === 0 ? (
             <p className="text-gray-500 text-center py-12">
-              No defective items found. All devices are in good condition! 🎉
+              No items requiring maintenance. All devices are in good condition! 🎉
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -77,12 +123,13 @@ export default async function MaintenanceDashboard() {
                       Condition
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Latest Issue
+                      Issues
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {defectiveItems.map((item: any) => {
+                  {allMaintenanceItems.map((item: any) => {
+                    const openIssues = item.issues.filter((issue: any) => ['OPEN', 'IN_PROGRESS'].includes(issue.status))
                     const latestIssue = item.issues[0]
                     return (
                       <tr key={item.id} className="hover:bg-gray-50">
@@ -104,7 +151,7 @@ export default async function MaintenanceDashboard() {
                               {item.school.name}
                             </Link>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-400">Office</span>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -123,7 +170,16 @@ export default async function MaintenanceDashboard() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {latestIssue ? (
+                          {openIssues.length > 0 ? (
+                            <div>
+                              <div className="font-medium text-red-600">
+                                {openIssues.length} open issue{openIssues.length > 1 ? 's' : ''}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                Latest: {latestIssue.issueType.replace(/_/g, ' ')}
+                              </div>
+                            </div>
+                          ) : latestIssue ? (
                             <div>
                               <div className="font-medium">{latestIssue.issueType.replace(/_/g, ' ')}</div>
                               <div className="text-xs text-gray-400">
@@ -131,7 +187,7 @@ export default async function MaintenanceDashboard() {
                               </div>
                             </div>
                           ) : (
-                            <span className="text-gray-400">No issues reported</span>
+                            <span className="text-gray-400">Defective condition only</span>
                           )}
                         </td>
                       </tr>

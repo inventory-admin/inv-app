@@ -31,11 +31,16 @@ export default function SchoolHealthDashboard() {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'health' | 'name' | 'problems'>('health')
   const [showAll, setShowAll] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     fetch('/api/schools-list')
       .then((res) => res.json())
-      .then((data: School[]) => {
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          console.error('Expected array from /api/schools-list, got:', data)
+          return
+        }
         setSchools(data)
         
         const stats = data.map((school: School) => {
@@ -65,6 +70,7 @@ export default function SchoolHealthDashboard() {
 
         setSchoolStats(stats)
         setFilteredStats(stats)
+        setIsLoading(false)
       })
   }, [])
 
@@ -114,24 +120,24 @@ export default function SchoolHealthDashboard() {
         <div className="grid gap-6 md:grid-cols-4 mb-8">
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-blue-500">
             <div className="text-gray-500 text-sm font-medium mb-2">Total Schools</div>
-            <div className="text-4xl font-bold text-blue-600">{schoolStats.length}</div>
+            <div className="text-4xl font-bold text-blue-600">{isLoading ? '...' : schoolStats.length}</div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-green-500">
             <div className="text-gray-500 text-sm font-medium mb-2">Healthy Schools</div>
-            <div className="text-4xl font-bold text-green-600">{healthyCount}</div>
+            <div className="text-4xl font-bold text-green-600">{isLoading ? '...' : healthyCount}</div>
             <div className="text-xs text-gray-500 mt-1">≥80% working devices</div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-yellow-500">
             <div className="text-gray-500 text-sm font-medium mb-2">Moderate Schools</div>
-            <div className="text-4xl font-bold text-yellow-600">{moderateCount}</div>
+            <div className="text-4xl font-bold text-yellow-600">{isLoading ? '...' : moderateCount}</div>
             <div className="text-xs text-gray-500 mt-1">50-79% working devices</div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-red-500">
             <div className="text-gray-500 text-sm font-medium mb-2">Critical Schools</div>
-            <div className="text-4xl font-bold text-red-600">{criticalCount}</div>
+            <div className="text-4xl font-bold text-red-600">{isLoading ? '...' : criticalCount}</div>
             <div className="text-xs text-gray-500 mt-1">&lt;50% working devices</div>
           </div>
         </div>

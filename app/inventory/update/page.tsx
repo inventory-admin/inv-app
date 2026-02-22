@@ -43,9 +43,11 @@ export default function UpdateInventoryPage() {
       fetch('/api/inventory-list').then((res) => res.json()),
       fetch('/api/schools-list').then((res) => res.json()),
     ]).then(([inventoryData, schoolsData]) => {
-      setItems(inventoryData)
-      setFilteredItems(inventoryData)
-      setSchools(schoolsData)
+      const invArray = Array.isArray(inventoryData) ? inventoryData : []
+      const schArray = Array.isArray(schoolsData) ? schoolsData : []
+      setItems(invArray)
+      setFilteredItems(invArray)
+      setSchools(schArray)
     })
   }, [])
 
@@ -104,7 +106,7 @@ export default function UpdateInventoryPage() {
     if (response.ok) {
       // Refresh data
       const data = await fetch('/api/inventory-list').then((res) => res.json())
-      setItems(data)
+      setItems(Array.isArray(data) ? data : [])
       setSelectedItems(new Set())
       setBulkUpdate({ location: '', condition: '' })
     }

@@ -32,6 +32,7 @@ export async function createInventory(formData: FormData) {
   })
 
   revalidatePath('/inventory')
+  revalidatePath('/schools')
   redirect('/inventory')
 }
 
@@ -64,7 +65,7 @@ export async function updateInventory(id: number, formData: FormData) {
   })
 
   revalidatePath('/inventory')
-  revalidatePath(`/inventory/${id}`)
+  revalidatePath('/schools')
   redirect('/inventory')
 }
 
@@ -75,5 +76,6 @@ export async function deleteInventory(id: number) {
   })
 
   revalidatePath('/inventory')
+  revalidatePath('/schools')
   redirect('/inventory')
 }

@@ -1,6 +1,12 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
+// Cache configuration - Change this to adjust dashboard update delay
+const CACHE_SECONDS = 10
+
+export const dynamic = 'force-dynamic'
+export const revalidate = CACHE_SECONDS
+
 export async function GET() {
   try {
     const schools = await prisma.school.findMany({

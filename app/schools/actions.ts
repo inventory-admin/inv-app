@@ -61,6 +61,5 @@ export async function updateSchool(id: number, formData: FormData) {
   })
 
   revalidatePath('/schools')
-  revalidatePath(`/schools/${id}`)
   redirect('/schools')
 }
