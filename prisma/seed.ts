@@ -69,7 +69,7 @@ async function main() {
         itemName: 'UPS Battery Backup',
         category: 'UPS',
         location: 'AT_SCHOOL',
-        condition: 'DAMAGED',
+        condition: 'NOT_WORKING',
         quantity: 6,
         minStockLevel: 2,
         schoolId: khusropur?.id,

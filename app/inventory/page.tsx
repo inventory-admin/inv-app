@@ -82,12 +82,9 @@ export default function InventoryPage() {
   // Calculate statistics
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
   const workingItems = items.filter((item) => item.condition === 'WORKING').reduce((sum, item) => sum + item.quantity, 0)
-  const notWorkingItems = items.filter((item) => item.condition === 'NOT_WORKING' || item.condition === 'DAMAGED' || item.condition === 'DISCARDED').reduce((sum, item) => sum + item.quantity, 0)
+  const notWorkingItems = items.filter((item) => item.condition === 'NOT_WORKING' || item.condition === 'DISCARDED').reduce((sum, item) => sum + item.quantity, 0)
   const atSchools = items.filter((item) => item.location === 'AT_SCHOOL').reduce((sum, item) => sum + item.quantity, 0)
   const inOffice = items.filter((item) => item.location === 'IN_OFFICE').reduce((sum, item) => sum + item.quantity, 0)
-
-  // Define categories from enum
-  const categories = ['UPS', 'KEYBOARD', 'MOUSE', 'CPU', 'SCREEN']
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -194,7 +191,6 @@ export default function InventoryPage() {
                 <option value="all">All Conditions</option>
                 <option value="WORKING">Working</option>
                 <option value="NOT_WORKING">Not Working</option>
-                <option value="DAMAGED">Damaged</option>
                 <option value="DISCARDED">Discarded</option>
               </select>
             </div>
@@ -302,8 +298,6 @@ export default function InventoryPage() {
                               ? 'bg-green-100 text-green-800'
                               : item.condition === 'NOT_WORKING'
                               ? 'bg-red-100 text-red-800'
-                              : item.condition === 'DAMAGED'
-                              ? 'bg-orange-100 text-orange-800'
                               : 'bg-gray-100 text-gray-800'
                           }`}
                         >

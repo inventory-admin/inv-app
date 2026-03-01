@@ -8,7 +8,7 @@ export async function createInventory(formData: FormData) {
   const itemName = formData.get('itemName') as string
   const category = formData.get('category') as 'UPS' | 'KEYBOARD' | 'MOUSE' | 'CPU' | 'SCREEN'
   const location = formData.get('location') as 'IN_OFFICE' | 'AT_SCHOOL' | 'DISCARDED'
-  const condition = formData.get('condition') as 'WORKING' | 'NOT_WORKING' | 'DAMAGED' | 'DISCARDED'
+  const condition = formData.get('condition') as 'WORKING' | 'NOT_WORKING' | 'DISCARDED'
   const quantity = parseInt(formData.get('quantity') as string)
   const minStockLevel = formData.get('minStockLevel') as string
   const itemTag = formData.get('itemTag') as string
@@ -40,7 +40,7 @@ export async function updateInventory(id: number, formData: FormData) {
   const itemName = formData.get('itemName') as string
   const category = formData.get('category') as 'UPS' | 'KEYBOARD' | 'MOUSE' | 'CPU' | 'SCREEN'
   const location = formData.get('location') as 'IN_OFFICE' | 'AT_SCHOOL' | 'DISCARDED'
-  const condition = formData.get('condition') as 'WORKING' | 'NOT_WORKING' | 'DAMAGED' | 'DISCARDED'
+  const condition = formData.get('condition') as 'WORKING' | 'NOT_WORKING' | 'DISCARDED'
   const quantity = parseInt(formData.get('quantity') as string)
   const minStockLevel = formData.get('minStockLevel') as string
   const itemTag = formData.get('itemTag') as string

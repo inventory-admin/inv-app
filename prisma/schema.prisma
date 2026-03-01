@@ -52,7 +52,6 @@ enum Category {
 enum Condition {
   WORKING
   NOT_WORKING
-  DAMAGED
   DISCARDED
 }
 

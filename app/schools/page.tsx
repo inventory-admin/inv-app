@@ -10,32 +10,27 @@ export const revalidate = CACHE_SECONDS
 export default async function SchoolsPage() {
   const schools = await prisma.school.findMany({
     include: {
-      inventory: {
-        include: {
-          issues: {
-            where: { status: { in: ['OPEN', 'IN_PROGRESS'] } }
-          }
-        }
-      },
+      inventory: true,
     },
     orderBy: { name: 'asc' },
   })
 
-  const schoolsWithStats = schools.map((school) => {
-    const itemsWithIssues = school.inventory.filter((i) => i.issues.length > 0).length
-    return {
-      ...school,
-      total: school.inventory.length,
-      working: school.inventory.filter((i) => i.location === 'AT_SCHOOL' && i.condition === 'WORKING').length,
-      broken: school.inventory.filter((i) => i.location === 'AT_SCHOOL' && (i.condition === 'NOT_WORKING' || i.condition === 'DAMAGED')).length,
-      withIssues: itemsWithIssues,
-    }
-  })
+  const schoolsWithStats = schools.map((school) => ({
+    ...school,
+    total: school.inventory.length,
+    working: school.inventory.filter((i) => i.location === 'AT_SCHOOL' && i.condition === 'WORKING').length,
+    defective: school.inventory.filter((i) => i.condition === 'NOT_WORKING').length,
+  }))
 
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Schools</h1>
+        <div>
+          <Link href="/" className="text-blue-600 hover:underline mb-4 inline-block">
+            ← Back to Home
+          </Link>
+          <h1 className="text-3xl font-bold">Schools</h1>
+        </div>
         <Link
           href="/schools/new"
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -62,12 +57,8 @@ export default async function SchoolsPage() {
                 <span className="font-semibold text-green-600">{school.working}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Broken:</span>
-                <span className="font-semibold text-red-600">{school.broken}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">With Issues:</span>
-                <span className="font-semibold text-orange-600">{school.withIssues}</span>
+                <span className="text-gray-600">Defective:</span>
+                <span className="font-semibold text-red-600">{school.defective}</span>
               </div>
             </div>
           </Link>

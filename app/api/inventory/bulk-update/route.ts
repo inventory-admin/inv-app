@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     // Update all items with the given IDs
-    await prisma.inventory.updateMany({
+    const result = await prisma.inventory.updateMany({
       where: {
         id: {
           in: itemIds,
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     revalidatePath('/inventory')
     revalidatePath('/schools')
 
-    return NextResponse.json({ success: true, updated: itemIds.length })
+    return NextResponse.json({ success: true, updated: result.count })
   } catch (error) {
     console.error('Error bulk updating inventory:', error)
     return NextResponse.json(

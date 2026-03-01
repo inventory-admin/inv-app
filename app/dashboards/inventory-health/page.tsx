@@ -11,76 +11,50 @@ export default async function InventoryHealthDashboard() {
   const [schools, inventory] = await Promise.all([
     prisma.school.findMany({
       include: {
-        inventory: {
-          include: {
-            issues: {
-              where: { status: { in: ['OPEN', 'IN_PROGRESS'] } }
-            }
-          }
-        },
+        inventory: true,
       },
     }),
-    prisma.inventory.findMany({
-      include: {
-        issues: {
-          where: { status: { in: ['OPEN', 'IN_PROGRESS'] } }
-        }
-      }
-    }),
+    prisma.inventory.findMany(),
   ])
 
-  // Schools with most problems (defective items + open issues)
+  // Schools with most problems (based on condition only)
   const schoolProblems = schools
     .map((school: any) => {
       const defective = school.inventory.filter(
-        (item: any) => item.condition === 'NOT_WORKING' || item.condition === 'DAMAGED' || item.condition === 'DISCARDED'
+        (item: any) => item.condition === 'NOT_WORKING' || item.condition === 'DISCARDED'
       ).length
-      const withIssues = school.inventory.filter(
-        (item: any) => item.issues.length > 0
-      ).length
-      const totalProblems = Math.max(defective, withIssues) // Avoid double counting
       return {
         id: school.id,
         name: school.name,
         total: school.inventory.length,
         defective,
-        withIssues,
-        totalProblems,
       }
     })
-    .filter((s: { totalProblems: number }) => s.totalProblems > 0)
-    .sort((a: { totalProblems: number }, b: { totalProblems: number }) => b.totalProblems - a.totalProblems)
+    .filter((s: { defective: number }) => s.defective > 0)
+    .sort((a: { defective: number }, b: { defective: number }) => b.defective - a.defective)
     .slice(0, 10)
 
-  // Items with most issues (grouped by category)
+  // Items with most issues (grouped by category, based on condition only)
   const categoryStats = inventory.reduce((acc: any, item: any) => {
     if (!acc[item.category]) {
-      acc[item.category] = { total: 0, defective: 0, withIssues: 0 }
+      acc[item.category] = { total: 0, defective: 0 }
     }
     acc[item.category].total++
-    if (item.condition === 'NOT_WORKING' || item.condition === 'DAMAGED' || item.condition === 'DISCARDED') {
+    if (item.condition === 'NOT_WORKING' || item.condition === 'DISCARDED') {
       acc[item.category].defective++
     }
-    if (item.issues.length > 0) {
-      acc[item.category].withIssues++
-    }
     return acc
-  }, {} as Record<string, { total: number; defective: number; withIssues: number }>)
+  }, {} as Record<string, { total: number; defective: number }>)
 
-  const categoryProblems = (Object.entries(categoryStats) as [string, { total: number; defective: number; withIssues: number }][])
-    .map(([category, stats]) => {
-      const totalProblems = Math.max(stats.defective, stats.withIssues)
-      return {
-        category,
-        total: stats.total,
-        defective: stats.defective,
-        withIssues: stats.withIssues,
-        totalProblems,
-        percentage: Math.round((totalProblems / stats.total) * 100),
-      }
-    })
-    .filter((c: { totalProblems: number }) => c.totalProblems > 0)
-    .sort((a: { totalProblems: number }, b: { totalProblems: number }) => b.totalProblems - a.totalProblems)
+  const categoryProblems = (Object.entries(categoryStats) as [string, { total: number; defective: number }][])
+    .map(([category, stats]) => ({
+      category,
+      total: stats.total,
+      defective: stats.defective,
+      percentage: Math.round((stats.defective / stats.total) * 100),
+    }))
+    .filter((c: { defective: number }) => c.defective > 0)
+    .sort((a: { defective: number }, b: { defective: number }) => b.defective - a.defective)
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -105,7 +79,7 @@ export default async function InventoryHealthDashboard() {
               <p className="text-gray-500 text-center py-8">No schools with problems found</p>
             ) : (
               <div className="space-y-4">
-                {schoolProblems.map((school: { id: number; name: string; total: number; defective: number; totalProblems: number; withIssues: number }, index: number) => (
+                {schoolProblems.map((school: { id: number; name: string; total: number; defective: number }, index: number) => (
                   <div key={school.id} className="border rounded-lg p-4 hover:shadow-md transition">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-3">
@@ -130,24 +104,21 @@ export default async function InventoryHealthDashboard() {
                         </Link>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-red-600">{school.totalProblems}</div>
-                        <div className="text-xs text-gray-500">items with problems</div>
+                        <div className="text-2xl font-bold text-red-600">{school.defective}</div>
+                        <div className="text-xs text-gray-500">defective items</div>
                       </div>
                     </div>
                     <div className="flex justify-between text-sm text-gray-600">
                       <span>Total devices: {school.total}</span>
                       <span>
-                        {Math.round((school.totalProblems / school.total) * 100)}% with problems
+                        {Math.round((school.defective / school.total) * 100)}% defective
                       </span>
-                    </div>
-                    <div className="text-xs text-gray-500 mb-2">
-                      {school.defective} defective • {school.withIssues} with open issues
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                       <div
                         className="bg-red-500 h-2 rounded-full"
                         style={{
-                          width: `${(school.totalProblems / school.total) * 100}%`,
+                          width: `${(school.defective / school.total) * 100}%`,
                         }}
                       ></div>
                     </div>
@@ -168,7 +139,7 @@ export default async function InventoryHealthDashboard() {
               <p className="text-gray-500 text-center py-8">No items with issues found</p>
             ) : (
               <div className="space-y-4">
-                {categoryProblems.map((cat: { category: string; total: number; defective: number; percentage: number; totalProblems: number; withIssues: number }, index: number) => (
+                {categoryProblems.map((cat: { category: string; total: number; defective: number; percentage: number }, index: number) => (
                   <div key={cat.category} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-3">
@@ -188,16 +159,13 @@ export default async function InventoryHealthDashboard() {
                         <div className="text-lg font-semibold text-gray-800">{cat.category}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-red-600">{cat.totalProblems}</div>
-                        <div className="text-xs text-gray-500">with problems</div>
+                        <div className="text-2xl font-bold text-red-600">{cat.defective}</div>
+                        <div className="text-xs text-gray-500">defective</div>
                       </div>
                     </div>
                     <div className="flex justify-between text-sm text-gray-600">
                       <span>Total: {cat.total} items</span>
-                      <span>{cat.percentage}% problem rate</span>
-                    </div>
-                    <div className="text-xs text-gray-500 mb-2">
-                      {cat.defective} defective • {cat.withIssues} with open issues
+                      <span>{cat.percentage}% defective</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                       <div
@@ -225,7 +193,7 @@ export default async function InventoryHealthDashboard() {
             {schoolProblems.length > 0 && (
               <li>
                 • Focus maintenance efforts on <strong>{schoolProblems[0].name}</strong> which has{' '}
-                {schoolProblems[0].totalProblems} items with problems
+                {schoolProblems[0].defective} defective items
               </li>
             )}
             {categoryProblems.length > 0 && (

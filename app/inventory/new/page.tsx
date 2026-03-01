@@ -103,7 +103,6 @@ export default function NewInventoryPage() {
                 >
                   <option value="WORKING">Working</option>
                   <option value="NOT_WORKING">Not Working</option>
-                  <option value="DAMAGED">Damaged</option>
                   <option value="DISCARDED">Discarded</option>
                 </select>
               </div>

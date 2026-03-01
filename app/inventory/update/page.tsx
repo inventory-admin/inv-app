@@ -204,7 +204,6 @@ export default function UpdateInventoryPage() {
                   <option value="">-- No Change --</option>
                   <option value="WORKING">Working</option>
                   <option value="NOT_WORKING">Not Working</option>
-                  <option value="DAMAGED">Damaged</option>
                   <option value="DISCARDED">Discarded</option>
                 </select>
               </div>
@@ -305,8 +304,6 @@ export default function UpdateInventoryPage() {
                               ? 'bg-green-100 text-green-800'
                               : item.condition === 'NOT_WORKING'
                               ? 'bg-red-100 text-red-800'
-                              : item.condition === 'DAMAGED'
-                              ? 'bg-orange-100 text-orange-800'
                               : 'bg-gray-100 text-gray-800'
                           }`}
                         >

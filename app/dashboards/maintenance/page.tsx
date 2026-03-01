@@ -11,11 +11,7 @@ export default async function MaintenanceDashboard() {
   // Get items with defective conditions
   const defectiveItems = await prisma.inventory.findMany({
     where: {
-      OR: [
-        { condition: 'NOT_WORKING' },
-        { condition: 'DAMAGED' },
-        { condition: 'DISCARDED' },
-      ],
+      condition: 'NOT_WORKING',
     },
     include: {
       school: true,
@@ -54,11 +50,9 @@ export default async function MaintenanceDashboard() {
     }
   })
 
-  const criticalItems = allMaintenanceItems.filter((item: any) => 
-    item.condition === 'NOT_WORKING' || 
-    item.issues.some((issue: any) => issue.issueType === 'HARDWARE_FAILURE')
+  const notWorkingItems = allMaintenanceItems.filter((item: any) => 
+    item.condition === 'NOT_WORKING'
   )
-  const damagedItems = allMaintenanceItems.filter((item: any) => item.condition === 'DAMAGED')
   const itemsWithOpenIssues = allMaintenanceItems.filter((item: any) => 
     item.issues.some((issue: any) => ['OPEN', 'IN_PROGRESS'].includes(issue.status))
   )
@@ -75,17 +69,11 @@ export default async function MaintenanceDashboard() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-red-500">
-            <div className="text-gray-500 text-sm font-medium mb-2">Critical Items</div>
-            <div className="text-4xl font-bold text-red-600">{criticalItems.length}</div>
-            <div className="text-xs text-gray-500 mt-1">Not working or hardware failure</div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-orange-500">
-            <div className="text-gray-500 text-sm font-medium mb-2">Damaged Items</div>
-            <div className="text-4xl font-bold text-orange-600">{damagedItems.length}</div>
-            <div className="text-xs text-gray-500 mt-1">Still working but damaged</div>
+            <div className="text-gray-500 text-sm font-medium mb-2">Not Working</div>
+            <div className="text-4xl font-bold text-red-600">{notWorkingItems.length}</div>
+            <div className="text-xs text-gray-500 mt-1">Devices needing repair</div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 border-t-4 border-yellow-500">
@@ -161,8 +149,6 @@ export default async function MaintenanceDashboard() {
                                 ? 'bg-green-100 text-green-800'
                                 : item.condition === 'NOT_WORKING'
                                 ? 'bg-red-100 text-red-800'
-                                : item.condition === 'DAMAGED'
-                                ? 'bg-orange-100 text-orange-800'
                                 : 'bg-gray-100 text-gray-800'
                             }`}
                           >
