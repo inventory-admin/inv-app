@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import IssueActions from './IssueActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -85,6 +86,9 @@ export default async function IssuesPage() {
                       >
                         {issue.inventory.itemName}
                       </Link>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        Tag: {issue.inventory.itemTag || '-'} | ID: {issue.inventory.itemId || '-'}
+                      </div>
                       <div className="text-sm text-gray-600 mt-1">
                         {issue.inventory.category}
                         {issue.school && (
@@ -106,6 +110,11 @@ export default async function IssuesPage() {
                     </div>
                   </div>
                   <p className="text-gray-700 text-sm">{issue.description}</p>
+                  <IssueActions
+                    issueId={issue.id}
+                    inventoryItemName={issue.inventory.itemName}
+                    itemTag={issue.inventory.itemTag}
+                  />
                 </div>
               ))}
             </div>
@@ -138,6 +147,9 @@ export default async function IssuesPage() {
                       >
                         {issue.inventory.itemName}
                       </Link>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        Tag: {issue.inventory.itemTag || '-'} | ID: {issue.inventory.itemId || '-'}
+                      </div>
                       <div className="text-sm text-gray-600 mt-1">
                         {issue.inventory.category}
                         {issue.school && (

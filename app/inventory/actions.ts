@@ -48,6 +48,23 @@ export async function updateInventory(id: number, formData: FormData) {
   const notes = formData.get('notes') as string
   const lastModifiedBy = formData.get('lastModifiedBy') as string
 
+  const tagValue = itemTag || null
+
+  // Tag uniqueness check: if setting to WORKING with a non-null tag,
+  // ensure no other WORKING item has the same tag
+  if (condition === 'WORKING' && tagValue) {
+    const conflicting = await prisma.inventory.findFirst({
+      where: {
+        itemTag: tagValue,
+        condition: 'WORKING',
+        id: { not: id },
+      },
+    })
+    if (conflicting) {
+      throw new Error(`Cannot set condition to WORKING: another item with tag '${tagValue}' is already WORKING`)
+    }
+  }
+
   await prisma.inventory.update({
     where: { id },
     data: {
@@ -57,7 +74,7 @@ export async function updateInventory(id: number, formData: FormData) {
       condition,
       quantity,
       minStockLevel: minStockLevel ? parseInt(minStockLevel) : null,
-      itemTag: itemTag || null,
+      itemTag: tagValue,
       schoolId: schoolId ? parseInt(schoolId) : null,
       notes: notes || null,
       lastModifiedBy,

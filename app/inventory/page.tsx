@@ -11,6 +11,7 @@ type InventoryItem = {
   condition: string
   location: string
   itemId: string | null
+  itemTag: string | null
   school: {
     id: number
     name: string
@@ -52,7 +53,8 @@ export default function InventoryPage() {
           item.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.school?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.itemId?.toLowerCase().includes(searchTerm.toLowerCase())
+          item.itemId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.itemTag?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
@@ -289,7 +291,7 @@ export default function InventoryPage() {
                         <div className="text-sm font-medium text-gray-900">{item.itemName}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-xs text-gray-500 font-mono">{item.itemId || '-'}</div>
+                        <div className="text-xs text-gray-500 font-mono">{item.itemTag || '-'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

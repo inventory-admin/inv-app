@@ -9,11 +9,32 @@ export default async function EditInventoryPage({ params }: { params: { id: stri
   
   if (!item) notFound()
 
-  const schools = await prisma.school.findMany({ orderBy: { name: 'asc' } })
+  const [schools, openIssues] = await Promise.all([
+    prisma.school.findMany({ orderBy: { name: 'asc' } }),
+    prisma.issue.findMany({
+      where: {
+        inventoryId: id,
+        status: { in: ['OPEN', 'IN_PROGRESS'] },
+      },
+    }),
+  ])
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Edit Device #{item.id}</h1>
+
+      {openIssues.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <p className="text-yellow-800 text-sm font-medium">
+            ⚠️ This device has {openIssues.length} open issue{openIssues.length > 1 ? 's' : ''}.
+            Consider using the{' '}
+            <Link href="/issues" className="text-blue-600 hover:underline font-semibold">
+              Issues Dashboard
+            </Link>{' '}
+            to resolve them.
+          </p>
+        </div>
+      )}
 
       <form action={updateInventory.bind(null, id)} className="bg-white shadow rounded-lg p-6 space-y-4">
         <div>

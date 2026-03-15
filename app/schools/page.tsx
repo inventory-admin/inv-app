@@ -17,7 +17,7 @@ export default async function SchoolsPage() {
 
   const schoolsWithStats = schools.map((school) => ({
     ...school,
-    total: school.inventory.length,
+    total: school.inventory.filter((i) => i.condition !== 'DISCARDED').length,
     working: school.inventory.filter((i) => i.location === 'AT_SCHOOL' && i.condition === 'WORKING').length,
     defective: school.inventory.filter((i) => i.condition === 'NOT_WORKING').length,
   }))

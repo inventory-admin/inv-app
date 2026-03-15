@@ -134,6 +134,23 @@ describe('POST /api/issues', () => {
 })
 
 describe('PATCH /api/issues', () => {
+  const mockIssueWithInventory = {
+    id: 1,
+    inventoryId: 5,
+    status: 'OPEN',
+    inventory: {
+      id: 5,
+      itemTag: 'TAG-001',
+      itemName: 'Laptop',
+      category: 'LAPTOP',
+      schoolId: 1,
+      condition: 'NOT_WORKING',
+      location: 'IN_OFFICE',
+      quantity: 1,
+      lastModifiedBy: 'admin',
+    },
+  }
+
   beforeEach(() => {
     resetAllMocks()
     jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -143,65 +160,72 @@ describe('PATCH /api/issues', () => {
     jest.restoreAllMocks()
   })
 
-  it('should update issue status', async () => {
-    mockPrisma.issue.findUnique.mockResolvedValue({ id: 1, inventoryId: 5 })
-    mockPrisma.$transaction.mockResolvedValue([{ id: 1, status: 'IN_PROGRESS' }])
+  it('should return 400 for invalid action', async () => {
+    const req = createRequest({
+      issueId: 1,
+      action: 'IN_PROGRESS',
+    })
+
+    const response = await PATCH(req)
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toMatch(/Invalid action/)
+  })
+
+  it('should set inventory condition to WORKING when resolving issue', async () => {
+    mockPrisma.issue.findUnique.mockResolvedValue(mockIssueWithInventory)
+    mockPrisma.inventory.findFirst.mockResolvedValue(null)
+    mockPrisma.issue.update.mockResolvedValue({ id: 1, status: 'RESOLVED' })
+    mockPrisma.inventory.update.mockResolvedValue({ id: 5, condition: 'WORKING' })
+    mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(mockPrisma))
 
     const req = createRequest({
       issueId: 1,
-      status: 'IN_PROGRESS',
+      action: 'resolve',
     })
 
     const response = await PATCH(req)
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.status).toBe('IN_PROGRESS')
+    expect(data.issue.status).toBe('RESOLVED')
+    expect(mockPrisma.issue.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 1 },
+        data: expect.objectContaining({ status: 'RESOLVED' }),
+      })
+    )
+    expect(mockPrisma.inventory.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 5 },
+        data: { condition: 'WORKING' },
+      })
+    )
   })
 
-  it('should set inventory condition to WORKING when resolving issue', async () => {
-    mockPrisma.issue.findUnique.mockResolvedValue({ id: 1, inventoryId: 5 })
-    mockPrisma.$transaction.mockResolvedValue([{ id: 1, status: 'RESOLVED' }])
+  it('should discard inventory and close issue with discard action', async () => {
+    mockPrisma.issue.findUnique.mockResolvedValue(mockIssueWithInventory)
+    mockPrisma.inventory.update.mockResolvedValue({ id: 5, condition: 'DISCARDED' })
+    mockPrisma.issue.update.mockResolvedValue({ id: 1, status: 'CLOSED' })
+    mockPrisma.$transaction.mockImplementation(async (fn: any) => fn(mockPrisma))
 
     const req = createRequest({
       issueId: 1,
-      status: 'RESOLVED',
+      action: 'discard',
     })
 
-    await PATCH(req)
+    const response = await PATCH(req)
+    const data = await response.json()
 
-    const transactionCalls = mockPrisma.$transaction.mock.calls[0][0]
-    expect(transactionCalls.length).toBe(2) // issue update + inventory update
-  })
-
-  it('should set inventory condition to WORKING when closing issue', async () => {
-    mockPrisma.issue.findUnique.mockResolvedValue({ id: 1, inventoryId: 5 })
-    mockPrisma.$transaction.mockResolvedValue([{ id: 1, status: 'CLOSED' }])
-
-    const req = createRequest({
-      issueId: 1,
-      status: 'CLOSED',
-    })
-
-    await PATCH(req)
-
-    const transactionCalls = mockPrisma.$transaction.mock.calls[0][0]
-    expect(transactionCalls.length).toBe(2)
-  })
-
-  it('should not update inventory when changing to IN_PROGRESS', async () => {
-    mockPrisma.issue.findUnique.mockResolvedValue({ id: 1, inventoryId: 5 })
-    mockPrisma.$transaction.mockResolvedValue([{ id: 1, status: 'IN_PROGRESS' }])
-
-    const req = createRequest({
-      issueId: 1,
-      status: 'IN_PROGRESS',
-    })
-
-    await PATCH(req)
-
-    const transactionCalls = mockPrisma.$transaction.mock.calls[0][0]
-    expect(transactionCalls.length).toBe(1) // only issue update
+    expect(response.status).toBe(200)
+    expect(data.issue.status).toBe('CLOSED')
+    expect(mockPrisma.inventory.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 5 },
+        data: { condition: 'DISCARDED', location: 'DISCARDED' },
+      })
+    )
   })
 
   it('should return 404 if issue not found', async () => {
@@ -209,7 +233,7 @@ describe('PATCH /api/issues', () => {
 
     const req = createRequest({
       issueId: 999,
-      status: 'RESOLVED',
+      action: 'resolve',
     })
 
     const response = await PATCH(req)
@@ -220,12 +244,14 @@ describe('PATCH /api/issues', () => {
   })
 
   it('should return 500 on error', async () => {
-    mockPrisma.issue.findUnique.mockResolvedValue({ id: 1, inventoryId: 5 })
-    mockPrisma.$transaction.mockRejectedValue(new Error('DB error'))
+    mockPrisma.issue.findUnique.mockResolvedValue(mockIssueWithInventory)
+    mockPrisma.$transaction.mockImplementation(async () => {
+      throw new Error('DB error')
+    })
 
     const req = createRequest({
       issueId: 1,
-      status: 'RESOLVED',
+      action: 'resolve',
     })
 
     const response = await PATCH(req)

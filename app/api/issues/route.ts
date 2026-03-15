@@ -42,37 +42,152 @@ export async function POST(request: Request) {
   }
 }
 
+const VALID_ACTIONS = ['resolve', 'discard_replace', 'discard'] as const
+type IssueAction = (typeof VALID_ACTIONS)[number]
+
 export async function PATCH(request: Request) {
   try {
     const data = await request.json()
-    const { issueId, status } = data
+    const { issueId, action } = data as { issueId: number; action: string; location?: string }
+
+    // Validate action field
+    if (!VALID_ACTIONS.includes(action as IssueAction)) {
+      return NextResponse.json(
+        { error: 'Invalid action. Must be resolve, discard_replace, or discard' },
+        { status: 400 }
+      )
+    }
 
     const issue = await prisma.issue.findUnique({
       where: { id: issueId },
+      include: { inventory: true },
     })
 
     if (!issue) {
       return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
     }
 
-    const isResolving = status === 'RESOLVED' || status === 'CLOSED'
+    if (action === 'resolve') {
+      const result = await prisma.$transaction(async (tx) => {
+        // Check tag uniqueness before setting condition to WORKING
+        if (issue.inventory.itemTag) {
+          const conflicting = await tx.inventory.findFirst({
+            where: {
+              itemTag: issue.inventory.itemTag,
+              condition: 'WORKING',
+              id: { not: issue.inventory.id },
+            },
+          })
+          if (conflicting) {
+            return { conflict: true, tag: issue.inventory.itemTag }
+          }
+        }
 
-    // Update issue and sync inventory condition in a transaction
-    const [updatedIssue] = await prisma.$transaction([
-      prisma.issue.update({
+        const updatedIssue = await tx.issue.update({
+          where: { id: issueId },
+          data: {
+            status: 'RESOLVED',
+            resolvedAt: new Date(),
+          },
+        })
+
+        await tx.inventory.update({
+          where: { id: issue.inventory.id },
+          data: { condition: 'WORKING' },
+        })
+
+        return { conflict: false, issue: updatedIssue }
+      })
+
+      if (result.conflict) {
+        return NextResponse.json(
+          { error: `Another WORKING item with tag '${result.tag}' already exists` },
+          { status: 409 }
+        )
+      }
+
+      return NextResponse.json({ issue: result.issue })
+    }
+
+    if (action === 'discard_replace') {
+      const newLocation = data.location || 'IN_OFFICE'
+
+      const result = await prisma.$transaction(async (tx) => {
+        // Check tag uniqueness before creating new WORKING item
+        if (issue.inventory.itemTag) {
+          const conflicting = await tx.inventory.findFirst({
+            where: {
+              itemTag: issue.inventory.itemTag,
+              condition: 'WORKING',
+              id: { not: issue.inventory.id },
+            },
+          })
+          if (conflicting) {
+            return { conflict: true, tag: issue.inventory.itemTag }
+          }
+        }
+
+        // Discard old item
+        await tx.inventory.update({
+          where: { id: issue.inventory.id },
+          data: { condition: 'DISCARDED', location: 'DISCARDED' },
+        })
+
+        // Create replacement item
+        const newItem = await tx.inventory.create({
+          data: {
+            itemTag: issue.inventory.itemTag,
+            itemName: issue.inventory.itemName,
+            category: issue.inventory.category,
+            schoolId: issue.inventory.schoolId,
+            condition: 'WORKING',
+            location: newLocation,
+            quantity: 1,
+            lastModifiedBy: 'system',
+          },
+        })
+
+        // Close the issue
+        const updatedIssue = await tx.issue.update({
+          where: { id: issueId },
+          data: {
+            status: 'CLOSED',
+            resolvedAt: new Date(),
+          },
+        })
+
+        return { conflict: false, issue: updatedIssue, newItem }
+      })
+
+      if (result.conflict) {
+        return NextResponse.json(
+          { error: `Another WORKING item with tag '${result.tag}' already exists` },
+          { status: 409 }
+        )
+      }
+
+      return NextResponse.json({ issue: result.issue, newItem: result.newItem })
+    }
+
+    // action === 'discard'
+    const discardResult = await prisma.$transaction(async (tx) => {
+      await tx.inventory.update({
+        where: { id: issue.inventory.id },
+        data: { condition: 'DISCARDED', location: 'DISCARDED' },
+      })
+
+      const updatedIssue = await tx.issue.update({
         where: { id: issueId },
         data: {
-          status,
-          ...(isResolving ? { resolvedAt: new Date() } : {}),
+          status: 'CLOSED',
+          resolvedAt: new Date(),
         },
-      }),
-      ...(isResolving ? [prisma.inventory.update({
-        where: { id: issue.inventoryId },
-        data: { condition: 'WORKING' as Condition },
-      })] : []),
-    ])
+      })
 
-    return NextResponse.json(updatedIssue)
+      return { issue: updatedIssue }
+    })
+
+    return NextResponse.json({ issue: discardResult.issue })
   } catch (error) {
     console.error('Error updating issue:', error)
     return NextResponse.json(
