@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 
 export async function createInventory(formData: FormData) {
   const itemName = formData.get('itemName') as string
-  const category = formData.get('category') as 'UPS' | 'KEYBOARD' | 'MOUSE' | 'CPU' | 'SCREEN'
+  const category = formData.get('category') as 'UPS' | 'KEYBOARD' | 'MOUSE' | 'CPU' | 'SCREEN' | 'POWER_ADAPTOR' | 'WIFI_RECEIVER' | 'THREE_PIN' | 'VGA_CABLE' | 'HDMI_CABLE'
   const location = formData.get('location') as 'IN_OFFICE' | 'AT_SCHOOL' | 'DISCARDED'
   const condition = formData.get('condition') as 'WORKING' | 'NOT_WORKING' | 'DISCARDED'
   const quantity = parseInt(formData.get('quantity') as string)
@@ -38,7 +38,7 @@ export async function createInventory(formData: FormData) {
 
 export async function updateInventory(id: number, formData: FormData) {
   const itemName = formData.get('itemName') as string
-  const category = formData.get('category') as 'UPS' | 'KEYBOARD' | 'MOUSE' | 'CPU' | 'SCREEN'
+  const category = formData.get('category') as 'UPS' | 'KEYBOARD' | 'MOUSE' | 'CPU' | 'SCREEN' | 'POWER_ADAPTOR' | 'WIFI_RECEIVER' | 'THREE_PIN' | 'VGA_CABLE' | 'HDMI_CABLE'
   const location = formData.get('location') as 'IN_OFFICE' | 'AT_SCHOOL' | 'DISCARDED'
   const condition = formData.get('condition') as 'WORKING' | 'NOT_WORKING' | 'DISCARDED'
   const quantity = parseInt(formData.get('quantity') as string)

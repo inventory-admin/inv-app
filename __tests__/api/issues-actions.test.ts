@@ -16,7 +16,7 @@ function createRequest(body: any): Request {
   return { json: async () => body } as Request
 }
 
-const CATEGORIES = ['UPS', 'KEYBOARD', 'MOUSE', 'CPU', 'SCREEN'] as const
+const CATEGORIES = ['UPS', 'KEYBOARD', 'MOUSE', 'CPU', 'SCREEN', 'POWER_ADAPTOR', 'WIFI_RECEIVER', 'THREE_PIN', 'VGA_CABLE', 'HDMI_CABLE'] as const
 
 const inventoryArb = fc.record({
   id: fc.integer({ min: 1, max: 10000 }),

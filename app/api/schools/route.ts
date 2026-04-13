@@ -18,30 +18,42 @@ export async function POST(request: Request) {
     const createdDevices = []
     
     if (devices && devices.length > 0) {
+      // Track per-category counts for this school to generate sequential tags
+      const categoryCounts: Record<string, number> = {}
+
       for (const device of devices) {
+        const itemType = device.itemType
+
+        // Initialize counter for this category if not yet tracked
+        if (categoryCounts[itemType] === undefined) {
+          // Count existing items of this category at this school (in case of re-onboarding)
+          const existingCount = await prisma.inventory.count({
+            where: {
+              schoolId: createdSchool.id,
+              category: itemType,
+            },
+          })
+          categoryCounts[itemType] = existingCount
+        }
+
         // Create inventory items based on quantity
         for (let i = 1; i <= device.quantity; i++) {
-          // Use itemType as both itemName and category
-          const itemType = device.itemType
-          
+          categoryCounts[itemType]++
+          const seqNum = categoryCounts[itemType]
+          const itemTag = `${createdSchool.schoolId}/${seqNum}/${itemType.toLowerCase()}`
+
           const inventoryItem = await prisma.inventory.create({
             data: {
               itemName: itemType,
               category: itemType,
-              quantity: 1, // Each item is created separately
-              condition: 'WORKING', // All new devices are working
+              itemTag,
+              quantity: 1,
+              condition: 'WORKING',
               location: 'AT_SCHOOL',
               schoolId: createdSchool.id,
               lastModifiedBy: 'Admin',
               notes: `Auto-generated during school onboarding`,
             },
-          })
-
-          // Update with auto-generated tag after we have the ID
-          const itemTag = `${createdSchool.schoolId}/${inventoryItem.id}/${itemType.toLowerCase()}`
-          await prisma.inventory.update({
-            where: { id: inventoryItem.id },
-            data: { itemTag },
           })
           
           createdDevices.push({

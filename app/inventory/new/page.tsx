@@ -73,6 +73,11 @@ export default function NewInventoryPage() {
                 <option value="MOUSE">Mouse</option>
                 <option value="CPU">CPU</option>
                 <option value="SCREEN">Screen</option>
+                <option value="POWER_ADAPTOR">Power Adaptor</option>
+                <option value="WIFI_RECEIVER">Wifi Receiver</option>
+                <option value="THREE_PIN">3 Pin</option>
+                <option value="VGA_CABLE">VGA Cable</option>
+                <option value="HDMI_CABLE">HDMI Cable</option>
               </select>
             </div>
 

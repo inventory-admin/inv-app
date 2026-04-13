@@ -157,7 +157,7 @@ describe('Inventory Server Actions', () => {
     })
 
     it('should handle all valid categories', async () => {
-      const categories = ['UPS', 'KEYBOARD', 'MOUSE', 'CPU', 'SCREEN']
+      const categories = ['UPS', 'KEYBOARD', 'MOUSE', 'CPU', 'SCREEN', 'POWER_ADAPTOR', 'WIFI_RECEIVER', 'THREE_PIN', 'VGA_CABLE', 'HDMI_CABLE']
 
       for (const category of categories) {
         resetAllMocks()

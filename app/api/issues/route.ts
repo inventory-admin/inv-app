@@ -111,19 +111,20 @@ export async function PATCH(request: Request) {
 
     if (action === 'discard_replace') {
       const newLocation = data.location || 'IN_OFFICE'
+      const newItemTag = data.newItemTag !== undefined ? data.newItemTag : issue.inventory.itemTag
 
       const result = await prisma.$transaction(async (tx) => {
         // Check tag uniqueness before creating new WORKING item
-        if (issue.inventory.itemTag) {
+        if (newItemTag) {
           const conflicting = await tx.inventory.findFirst({
             where: {
-              itemTag: issue.inventory.itemTag,
+              itemTag: newItemTag,
               condition: 'WORKING',
               id: { not: issue.inventory.id },
             },
           })
           if (conflicting) {
-            return { conflict: true, tag: issue.inventory.itemTag }
+            return { conflict: true, tag: newItemTag }
           }
         }
 
@@ -133,10 +134,10 @@ export async function PATCH(request: Request) {
           data: { condition: 'DISCARDED', location: 'DISCARDED' },
         })
 
-        // Create replacement item
+        // Create replacement item with the provided or original tag
         const newItem = await tx.inventory.create({
           data: {
-            itemTag: issue.inventory.itemTag,
+            itemTag: newItemTag || null,
             itemName: issue.inventory.itemName,
             category: issue.inventory.category,
             schoolId: issue.inventory.schoolId,

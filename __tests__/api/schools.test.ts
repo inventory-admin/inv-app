@@ -20,6 +20,8 @@ function createRequest(body: any): Request {
 describe('POST /api/schools', () => {
   beforeEach(() => {
     resetAllMocks()
+    // Default: no existing inventory for the school
+    mockPrisma.inventory.count.mockResolvedValue(0)
   })
 
   it('should create a school without devices', async () => {
@@ -42,13 +44,15 @@ describe('POST /api/schools', () => {
     })
   })
 
-  it('should create a school with devices', async () => {
+  it('should create a school with devices and per-category sequential tags', async () => {
     const createdSchool = { id: 1, schoolId: 'SCH001', name: 'Lincoln Elementary' }
     mockPrisma.school.create.mockResolvedValue(createdSchool)
 
-    const createdInventory = { id: 10, itemName: 'UPS', category: 'UPS' }
-    mockPrisma.inventory.create.mockResolvedValue(createdInventory)
-    mockPrisma.inventory.update.mockResolvedValue({ ...createdInventory, itemTag: 'SCH001/10/ups' })
+    let callId = 0
+    mockPrisma.inventory.create.mockImplementation(async (args: any) => {
+      callId++
+      return { id: callId, ...args.data }
+    })
 
     const req = createRequest({
       school: { schoolId: 'SCH001', name: 'Lincoln Elementary' },
@@ -59,43 +63,74 @@ describe('POST /api/schools', () => {
     const data = await response.json()
 
     expect(response.status).toBe(201)
-    expect(data.school).toEqual(createdSchool)
     expect(data.devices).toHaveLength(1)
-    expect(data.devices[0].itemTag).toBe('SCH001/10/ups')
+    expect(data.devices[0].itemTag).toBe('SCH001/1/ups')
   })
 
-  it('should create multiple devices based on quantity', async () => {
+  it('should generate per-category sequential numbering', async () => {
     const createdSchool = { id: 1, schoolId: 'SCH001', name: 'Test School' }
     mockPrisma.school.create.mockResolvedValue(createdSchool)
 
-    let callCount = 0
-    mockPrisma.inventory.create.mockImplementation(async () => {
-      callCount++
-      return { id: callCount, itemName: 'KEYBOARD', category: 'KEYBOARD' }
+    let callId = 0
+    mockPrisma.inventory.create.mockImplementation(async (args: any) => {
+      callId++
+      return { id: callId, ...args.data }
     })
-    mockPrisma.inventory.update.mockImplementation(async ({ where, data }: any) => ({
-      id: where.id,
-      ...data,
-    }))
 
     const req = createRequest({
       school: { schoolId: 'SCH001', name: 'Test School' },
-      devices: [{ itemType: 'KEYBOARD', quantity: 3 }],
+      devices: [
+        { itemType: 'UPS', quantity: 2 },
+        { itemType: 'KEYBOARD', quantity: 2 },
+      ],
     })
 
     const response = await POST(req)
     const data = await response.json()
 
-    expect(data.devices).toHaveLength(3)
-    expect(mockPrisma.inventory.create).toHaveBeenCalledTimes(3)
-    expect(mockPrisma.inventory.update).toHaveBeenCalledTimes(3)
+    expect(data.devices).toHaveLength(4)
+    // UPS should be numbered 1, 2
+    expect(data.devices[0].itemTag).toBe('SCH001/1/ups')
+    expect(data.devices[1].itemTag).toBe('SCH001/2/ups')
+    // KEYBOARD should be numbered 1, 2 (separate from UPS)
+    expect(data.devices[2].itemTag).toBe('SCH001/1/keyboard')
+    expect(data.devices[3].itemTag).toBe('SCH001/2/keyboard')
+  })
+
+  it('should continue numbering from existing items of same category', async () => {
+    const createdSchool = { id: 1, schoolId: 'SCH001', name: 'Test School' }
+    mockPrisma.school.create.mockResolvedValue(createdSchool)
+
+    // Simulate 3 existing UPS items at this school
+    mockPrisma.inventory.count.mockImplementation(async (args: any) => {
+      if (args.where.category === 'UPS') return 3
+      return 0
+    })
+
+    let callId = 100
+    mockPrisma.inventory.create.mockImplementation(async (args: any) => {
+      callId++
+      return { id: callId, ...args.data }
+    })
+
+    const req = createRequest({
+      school: { schoolId: 'SCH001', name: 'Test School' },
+      devices: [{ itemType: 'UPS', quantity: 2 }],
+    })
+
+    const response = await POST(req)
+    const data = await response.json()
+
+    expect(data.devices).toHaveLength(2)
+    // Should continue from 4 (3 existing + 1) and 5
+    expect(data.devices[0].itemTag).toBe('SCH001/4/ups')
+    expect(data.devices[1].itemTag).toBe('SCH001/5/ups')
   })
 
   it('should set all new devices as WORKING and AT_SCHOOL', async () => {
     const createdSchool = { id: 1, schoolId: 'SCH001', name: 'Test' }
     mockPrisma.school.create.mockResolvedValue(createdSchool)
-    mockPrisma.inventory.create.mockResolvedValue({ id: 1 })
-    mockPrisma.inventory.update.mockResolvedValue({ id: 1 })
+    mockPrisma.inventory.create.mockImplementation(async (args: any) => ({ id: 1, ...args.data }))
 
     const req = createRequest({
       school: { schoolId: 'SCH001', name: 'Test' },
@@ -113,11 +148,10 @@ describe('POST /api/schools', () => {
     })
   })
 
-  it('should generate correct item tags', async () => {
+  it('should set tag at creation time (no separate update)', async () => {
     const createdSchool = { id: 1, schoolId: 'SCH001', name: 'Test' }
     mockPrisma.school.create.mockResolvedValue(createdSchool)
-    mockPrisma.inventory.create.mockResolvedValue({ id: 42 })
-    mockPrisma.inventory.update.mockResolvedValue({ id: 42 })
+    mockPrisma.inventory.create.mockImplementation(async (args: any) => ({ id: 1, ...args.data }))
 
     const req = createRequest({
       school: { schoolId: 'SCH001', name: 'Test' },
@@ -126,10 +160,13 @@ describe('POST /api/schools', () => {
 
     await POST(req)
 
-    expect(mockPrisma.inventory.update).toHaveBeenCalledWith({
-      where: { id: 42 },
-      data: { itemTag: 'SCH001/42/mouse' },
+    // Tag should be set in the create call, not via a separate update
+    expect(mockPrisma.inventory.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        itemTag: 'SCH001/1/mouse',
+      }),
     })
+    expect(mockPrisma.inventory.update).not.toHaveBeenCalled()
   })
 
   it('should return 500 on error', async () => {
@@ -178,32 +215,25 @@ describe('POST /api/schools', () => {
     expect(data.devices).toHaveLength(0)
   })
 
-  it('should handle multiple device types', async () => {
+  it('should handle new category types', async () => {
     const createdSchool = { id: 1, schoolId: 'SCH001', name: 'Test' }
     mockPrisma.school.create.mockResolvedValue(createdSchool)
-
-    let callId = 0
-    mockPrisma.inventory.create.mockImplementation(async () => {
-      callId++
-      return { id: callId }
-    })
-    mockPrisma.inventory.update.mockImplementation(async ({ where }: any) => ({
-      id: where.id,
-    }))
+    mockPrisma.inventory.create.mockImplementation(async (args: any) => ({ id: 1, ...args.data }))
 
     const req = createRequest({
       school: { schoolId: 'SCH001', name: 'Test' },
       devices: [
-        { itemType: 'UPS', quantity: 2 },
-        { itemType: 'KEYBOARD', quantity: 1 },
+        { itemType: 'HDMI_CABLE', quantity: 1 },
+        { itemType: 'POWER_ADAPTOR', quantity: 1 },
       ],
     })
 
     const response = await POST(req)
     const data = await response.json()
 
-    expect(data.devices).toHaveLength(3) // 2 UPS + 1 KEYBOARD
-    expect(mockPrisma.inventory.create).toHaveBeenCalledTimes(3)
+    expect(data.devices).toHaveLength(2)
+    expect(data.devices[0].itemTag).toBe('SCH001/1/hdmi_cable')
+    expect(data.devices[1].itemTag).toBe('SCH001/1/power_adaptor')
   })
 
   it('should handle very long school name', async () => {

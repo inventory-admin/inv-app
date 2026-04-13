@@ -47,6 +47,11 @@ enum Category {
   MOUSE
   CPU
   SCREEN
+  POWER_ADAPTOR
+  WIFI_RECEIVER
+  THREE_PIN
+  VGA_CABLE
+  HDMI_CABLE
 }
 
 enum Condition {

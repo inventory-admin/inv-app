@@ -168,4 +168,87 @@ describe('PATCH /api/issues - Unit Tests', () => {
     // Verify the transaction was called (location default is handled inside the handler)
     expect(mockPrisma.$transaction).toHaveBeenCalled()
   })
+
+  it('should use custom newItemTag when provided for discard_replace', async () => {
+    const issue = {
+      id: 4, inventoryId: 9, status: 'OPEN',
+      inventory: { id: 9, itemTag: 'OLD-TAG', itemName: 'UPS', condition: 'NOT_WORKING', category: 'UPS', schoolId: 1 },
+    }
+    const newItem = { id: 101, itemTag: 'CUSTOM-TAG', condition: 'WORKING' }
+    const updatedIssue = { id: 4, status: 'CLOSED', resolvedAt: new Date() }
+
+    mockPrisma.issue.findUnique.mockResolvedValue(issue)
+    mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+      const tx = {
+        inventory: {
+          findFirst: jest.fn().mockResolvedValue(null),
+          update: jest.fn(),
+          create: jest.fn().mockResolvedValue(newItem),
+        },
+        issue: { update: jest.fn().mockResolvedValue(updatedIssue) },
+      }
+      return fn(tx)
+    })
+
+    const res = await PATCH(createRequest({ issueId: 4, action: 'discard_replace', newItemTag: 'CUSTOM-TAG' }))
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.newItem.itemTag).toBe('CUSTOM-TAG')
+  })
+
+  it('should fall back to original tag when newItemTag is not provided for discard_replace', async () => {
+    const issue = {
+      id: 5, inventoryId: 11, status: 'OPEN',
+      inventory: { id: 11, itemTag: 'ORIGINAL-TAG', itemName: 'CPU', condition: 'NOT_WORKING', category: 'CPU', schoolId: null },
+    }
+    const newItem = { id: 102, itemTag: 'ORIGINAL-TAG', condition: 'WORKING' }
+    const updatedIssue = { id: 5, status: 'CLOSED', resolvedAt: new Date() }
+
+    mockPrisma.issue.findUnique.mockResolvedValue(issue)
+    mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+      const tx = {
+        inventory: {
+          findFirst: jest.fn().mockResolvedValue(null),
+          update: jest.fn(),
+          create: jest.fn().mockResolvedValue(newItem),
+        },
+        issue: { update: jest.fn().mockResolvedValue(updatedIssue) },
+      }
+      return fn(tx)
+    })
+
+    const res = await PATCH(createRequest({ issueId: 5, action: 'discard_replace' }))
+    const data = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(data.newItem.itemTag).toBe('ORIGINAL-TAG')
+  })
+
+  it('should check tag uniqueness against custom newItemTag', async () => {
+    const issue = {
+      id: 6, inventoryId: 12, status: 'OPEN',
+      inventory: { id: 12, itemTag: 'OLD-TAG', itemName: 'MOUSE', condition: 'NOT_WORKING', category: 'MOUSE', schoolId: null },
+    }
+    const conflicting = { id: 200, itemTag: 'TAKEN-TAG', condition: 'WORKING' }
+
+    mockPrisma.issue.findUnique.mockResolvedValue(issue)
+    mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+      const tx = {
+        inventory: {
+          findFirst: jest.fn().mockResolvedValue(conflicting),
+          update: jest.fn(),
+          create: jest.fn(),
+        },
+        issue: { update: jest.fn() },
+      }
+      return fn(tx)
+    })
+
+    const res = await PATCH(createRequest({ issueId: 6, action: 'discard_replace', newItemTag: 'TAKEN-TAG' }))
+    const data = await res.json()
+
+    expect(res.status).toBe(409)
+    expect(data.error).toContain('TAKEN-TAG')
+  })
 })

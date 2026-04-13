@@ -16,7 +16,7 @@ export default async function SchoolDetailPage({ params }: { params: { id: strin
   if (!school) notFound()
 
   const working = school.inventory.filter((i: any) => i.location === 'AT_SCHOOL' && i.condition === 'WORKING')
-  const broken = school.inventory.filter((i: any) => i.location === 'AT_SCHOOL' && (i.condition === 'NOT_WORKING' || i.condition === 'DAMAGED'))
+  const broken = school.inventory.filter((i: any) => i.location === 'AT_SCHOOL' && i.condition === 'NOT_WORKING')
 
   return (
     <div className="p-8">
@@ -71,8 +71,6 @@ export default async function SchoolDetailPage({ params }: { params: { id: strin
                         ? 'bg-green-100 text-green-800'
                         : item.condition === 'NOT_WORKING'
                         ? 'bg-red-100 text-red-800'
-                        : item.condition === 'DAMAGED'
-                        ? 'bg-orange-100 text-orange-800'
                         : 'bg-gray-100 text-gray-800'
                     }`}>
                       {item.condition.replace('_', ' ')}

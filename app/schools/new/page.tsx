@@ -4,7 +4,24 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-const ITEM_TYPES = ['UPS', 'KEYBOARD', 'MOUSE', 'CPU', 'SCREEN']
+const ITEM_TYPES = ['UPS', 'KEYBOARD', 'MOUSE', 'CPU', 'SCREEN', 'POWER_ADAPTOR', 'WIFI_RECEIVER', 'THREE_PIN', 'VGA_CABLE', 'HDMI_CABLE']
+
+const CATEGORY_LABELS: Record<string, string> = {
+  UPS: 'UPS',
+  KEYBOARD: 'Keyboard',
+  MOUSE: 'Mouse',
+  CPU: 'CPU',
+  SCREEN: 'Screen',
+  POWER_ADAPTOR: 'Power Adaptor',
+  WIFI_RECEIVER: 'Wifi Receiver',
+  THREE_PIN: '3 Pin',
+  VGA_CABLE: 'VGA Cable',
+  HDMI_CABLE: 'HDMI Cable',
+}
+
+function formatCategory(cat: string) {
+  return CATEGORY_LABELS[cat] || cat.replace(/_/g, ' ')
+}
 
 type Device = {
   itemType: string
@@ -199,7 +216,7 @@ export default function NewSchoolPage() {
                           >
                             {ITEM_TYPES.map((type) => (
                               <option key={type} value={type}>
-                                {type.charAt(0) + type.slice(1).toLowerCase()}
+                                {formatCategory(type)}
                               </option>
                             ))}
                           </select>

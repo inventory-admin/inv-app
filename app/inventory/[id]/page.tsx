@@ -50,13 +50,23 @@ export default async function EditInventoryPage({ params }: { params: { id: stri
 
         <div>
           <label className="block text-sm font-medium mb-1">Category *</label>
-          <input
-            type="text"
+          <select
             name="category"
             required
             defaultValue={item.category}
             className="w-full border rounded px-3 py-2"
-          />
+          >
+            <option value="UPS">UPS</option>
+            <option value="KEYBOARD">Keyboard</option>
+            <option value="MOUSE">Mouse</option>
+            <option value="CPU">CPU</option>
+            <option value="SCREEN">Screen</option>
+            <option value="POWER_ADAPTOR">Power Adaptor</option>
+            <option value="WIFI_RECEIVER">Wifi Receiver</option>
+            <option value="THREE_PIN">3 Pin</option>
+            <option value="VGA_CABLE">VGA Cable</option>
+            <option value="HDMI_CABLE">HDMI Cable</option>
+          </select>
         </div>
 
         <div>
@@ -76,7 +86,6 @@ export default async function EditInventoryPage({ params }: { params: { id: stri
           <select name="condition" className="w-full border rounded px-3 py-2" defaultValue={item.condition}>
             <option value="WORKING">Working</option>
             <option value="NOT_WORKING">Not Working</option>
-            <option value="DAMAGED">Damaged</option>
             <option value="DISCARDED">Discarded</option>
           </select>
         </div>
