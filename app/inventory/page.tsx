@@ -327,12 +327,20 @@ export default function InventoryPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <Link
-                          href={`/inventory/${item.id}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          Edit
-                        </Link>
+                        <div className="flex gap-3">
+                          <Link
+                            href={`/inventory/${item.id}`}
+                            className="text-blue-600 hover:underline"
+                          >
+                            Edit
+                          </Link>
+                          <Link
+                            href={`/inventory/${item.id}#history`}
+                            className="text-gray-500 hover:text-gray-700 hover:underline"
+                          >
+                            History
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -9,13 +9,18 @@ export default async function EditInventoryPage({ params }: { params: { id: stri
   
   if (!item) notFound()
 
-  const [schools, openIssues] = await Promise.all([
+  const [schools, openIssues, allIssues] = await Promise.all([
     prisma.school.findMany({ orderBy: { name: 'asc' } }),
     prisma.issue.findMany({
       where: {
         inventoryId: id,
         status: { in: ['OPEN', 'IN_PROGRESS'] },
       },
+    }),
+    prisma.issue.findMany({
+      where: { inventoryId: id },
+      include: { school: true },
+      orderBy: { reportedAt: 'desc' },
     }),
   ])
 
@@ -172,6 +177,49 @@ export default async function EditInventoryPage({ params }: { params: { id: stri
           </Link>
         </div>
       </form>
+
+      {/* Issue History */}
+      <div id="history" className="bg-white shadow rounded-lg p-6 mt-8">
+        <h2 className="text-xl font-bold mb-4">📋 Issue History ({allIssues.length})</h2>
+        {allIssues.length === 0 ? (
+          <p className="text-gray-500 text-sm">No issues have been reported for this device.</p>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {allIssues.map((issue: any) => (
+              <div key={issue.id} className="py-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        issue.status === 'OPEN' ? 'bg-orange-100 text-orange-800' :
+                        issue.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+                        issue.status === 'RESOLVED' ? 'bg-green-100 text-green-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {issue.status.replace('_', ' ')}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {issue.issueType.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">{issue.description}</p>
+                    {issue.school && (
+                      <p className="text-xs text-gray-500 mt-1">School: {issue.school.name}</p>
+                    )}
+                  </div>
+                  <div className="text-right text-xs text-gray-500 whitespace-nowrap ml-4">
+                    <div>Reported: {new Date(issue.reportedAt).toLocaleDateString()}</div>
+                    <div>by {issue.reportedBy}</div>
+                    {issue.resolvedAt && (
+                      <div className="text-green-600">Resolved: {new Date(issue.resolvedAt).toLocaleDateString()}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
