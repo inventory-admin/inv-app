@@ -51,7 +51,7 @@ describe('GET /api/inventory-list', () => {
           },
         },
       },
-      orderBy: { itemName: 'asc' },
+      orderBy: [{ itemTag: 'asc' }, { itemName: 'asc' }],
     })
   })
 
@@ -74,14 +74,14 @@ describe('GET /api/inventory-list', () => {
     expect(data.error).toBe('Failed to fetch inventory')
   })
 
-  it('should order items alphabetically by itemName', async () => {
+  it('should order items by itemTag then itemName ascending', async () => {
     mockPrisma.inventory.findMany.mockResolvedValue([])
 
     await GET()
 
     expect(mockPrisma.inventory.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        orderBy: { itemName: 'asc' },
+        orderBy: [{ itemTag: 'asc' }, { itemName: 'asc' }],
       })
     )
   })

@@ -18,7 +18,7 @@ export async function GET() {
           },
         },
       },
-      orderBy: { itemName: 'asc' },
+      orderBy: [{ itemTag: 'asc' }, { itemName: 'asc' }],
     })
 
     return NextResponse.json(inventory)
