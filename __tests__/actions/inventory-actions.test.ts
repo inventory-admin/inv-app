@@ -37,7 +37,7 @@ describe('Inventory Server Actions', () => {
         location: 'IN_OFFICE',
         condition: 'WORKING',
         quantity: '5',
-        minStockLevel: '2',
+        
         itemTag: 'UPS-001',
         schoolId: '1',
         notes: 'New purchase',
@@ -53,7 +53,6 @@ describe('Inventory Server Actions', () => {
           location: 'IN_OFFICE',
           condition: 'WORKING',
           quantity: 5,
-          minStockLevel: 2,
           itemTag: 'UPS-001',
           schoolId: 1,
           notes: 'New purchase',
@@ -71,7 +70,7 @@ describe('Inventory Server Actions', () => {
         location: 'IN_OFFICE',
         condition: 'WORKING',
         quantity: '1',
-        minStockLevel: '',
+        
         itemTag: '',
         schoolId: '',
         notes: '',
@@ -82,7 +81,6 @@ describe('Inventory Server Actions', () => {
 
       expect(mockPrisma.inventory.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          minStockLevel: null,
           itemTag: null,
           schoolId: null,
           notes: null,
@@ -95,7 +93,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '10', minStockLevel: '3',
+        condition: 'WORKING', quantity: '10', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -104,7 +102,6 @@ describe('Inventory Server Actions', () => {
       expect(mockPrisma.inventory.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           quantity: 10,
-          minStockLevel: 3,
         }),
       })
     })
@@ -114,7 +111,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '1', minStockLevel: '',
+        condition: 'WORKING', quantity: '1', 
         itemTag: '', schoolId: '42', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -132,7 +129,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '1', minStockLevel: '',
+        condition: 'WORKING', quantity: '1', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -147,7 +144,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '1', minStockLevel: '',
+        condition: 'WORKING', quantity: '1', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -165,7 +162,7 @@ describe('Inventory Server Actions', () => {
 
         const formData = createFormData({
           itemName: 'Test', category, location: 'IN_OFFICE',
-          condition: 'WORKING', quantity: '1', minStockLevel: '',
+          condition: 'WORKING', quantity: '1', 
           itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
         })
 
@@ -178,15 +175,19 @@ describe('Inventory Server Actions', () => {
     })
 
     it('should handle all valid conditions', async () => {
-      const conditions = ['WORKING', 'NOT_WORKING', 'DISCARDED']
+      const conditionLocationPairs = [
+        ['WORKING', 'IN_OFFICE'],
+        ['NOT_WORKING', 'IN_OFFICE'],
+        ['DISCARDED', 'DISCARDED'],
+      ]
 
-      for (const condition of conditions) {
+      for (const [condition, location] of conditionLocationPairs) {
         resetAllMocks()
         mockPrisma.inventory.create.mockResolvedValue({ id: 1 })
 
         const formData = createFormData({
-          itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-          condition, quantity: '1', minStockLevel: '',
+          itemName: 'Test', category: 'UPS', location,
+          condition, quantity: '1', 
           itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
         })
 
@@ -199,15 +200,20 @@ describe('Inventory Server Actions', () => {
     })
 
     it('should handle all valid locations', async () => {
-      const locations = ['IN_OFFICE', 'AT_SCHOOL', 'DISCARDED']
+      const locationConditionPairs = [
+        ['IN_OFFICE', 'WORKING'],
+        ['AT_SCHOOL', 'WORKING'],
+        ['VENDOR', 'NOT_WORKING'],
+        ['DISCARDED', 'DISCARDED'],
+      ]
 
-      for (const location of locations) {
+      for (const [location, condition] of locationConditionPairs) {
         resetAllMocks()
         mockPrisma.inventory.create.mockResolvedValue({ id: 1 })
 
         const formData = createFormData({
           itemName: 'Test', category: 'UPS', location,
-          condition: 'WORKING', quantity: '1', minStockLevel: '',
+          condition, quantity: '1', 
           itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
         })
 
@@ -226,7 +232,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Updated UPS', category: 'UPS', location: 'AT_SCHOOL',
-        condition: 'NOT_WORKING', quantity: '3', minStockLevel: '1',
+        condition: 'NOT_WORKING', quantity: '3', 
         itemTag: 'UPS-001', schoolId: '2', notes: 'Moved', lastModifiedBy: 'Admin',
       })
 
@@ -240,7 +246,6 @@ describe('Inventory Server Actions', () => {
           location: 'AT_SCHOOL',
           condition: 'NOT_WORKING',
           quantity: 3,
-          minStockLevel: 1,
           itemTag: 'UPS-001',
           schoolId: 2,
           notes: 'Moved',
@@ -254,7 +259,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '1', minStockLevel: '',
+        condition: 'WORKING', quantity: '1', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -263,7 +268,6 @@ describe('Inventory Server Actions', () => {
       expect(mockPrisma.inventory.update).toHaveBeenCalledWith({
         where: { id: 1 },
         data: expect.objectContaining({
-          minStockLevel: null,
           itemTag: null,
           schoolId: null,
           notes: null,
@@ -276,7 +280,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '1', minStockLevel: '',
+        condition: 'WORKING', quantity: '1', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -291,7 +295,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '1', minStockLevel: '',
+        condition: 'WORKING', quantity: '1', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -302,14 +306,14 @@ describe('Inventory Server Actions', () => {
   })
 
   describe('deleteInventory', () => {
-    it('should soft-delete by setting location to DISCARDED', async () => {
+    it('should soft-delete by setting location and condition to DISCARDED', async () => {
       mockPrisma.inventory.update.mockResolvedValue({ id: 3 })
 
       await deleteInventory(3)
 
       expect(mockPrisma.inventory.update).toHaveBeenCalledWith({
         where: { id: 3 },
-        data: { location: 'DISCARDED' },
+        data: { location: 'DISCARDED', condition: 'DISCARDED' },
       })
     })
 
@@ -351,7 +355,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '1', minStockLevel: '',
+        condition: 'WORKING', quantity: '1', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -363,7 +367,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '1', minStockLevel: '',
+        condition: 'WORKING', quantity: '1', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -375,7 +379,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '1', minStockLevel: '',
+        condition: 'WORKING', quantity: '1', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -389,7 +393,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '0', minStockLevel: '',
+        condition: 'WORKING', quantity: '0', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -405,7 +409,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: 'Test', category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '-5', minStockLevel: '',
+        condition: 'WORKING', quantity: '-5', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 
@@ -422,7 +426,7 @@ describe('Inventory Server Actions', () => {
 
       const formData = createFormData({
         itemName: longName, category: 'UPS', location: 'IN_OFFICE',
-        condition: 'WORKING', quantity: '1', minStockLevel: '',
+        condition: 'WORKING', quantity: '1', 
         itemTag: '', schoolId: '', notes: '', lastModifiedBy: 'Admin',
       })
 

@@ -3,9 +3,18 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import {
+  LOCATIONS,
+  LOCATION_LABELS,
+  CONDITION_LABELS,
+  allowedConditionsForLocation,
+  allowedLocationsForCondition,
+  statusHint,
+} from '@/lib/inventory-status'
 
 export default function NewInventoryPage() {
   const router = useRouter()
+  const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     itemName: '',
     category: 'UPS',
@@ -16,9 +25,30 @@ export default function NewInventoryPage() {
     lastModifiedBy: 'Admin',
   })
 
+  // When location changes, keep condition valid for the new location
+  const handleLocationChange = (location: string) => {
+    const allowed = allowedConditionsForLocation(location)
+    setFormData((prev) => ({
+      ...prev,
+      location,
+      condition: allowed.includes(prev.condition as any) ? prev.condition : allowed[0],
+    }))
+  }
+
+  // When condition changes, keep location valid for the new condition
+  const handleConditionChange = (condition: string) => {
+    const allowed = allowedLocationsForCondition(condition)
+    setFormData((prev) => ({
+      ...prev,
+      condition,
+      location: allowed.includes(prev.location as any) ? prev.location : allowed[0],
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    setError('')
+
     const response = await fetch('/api/inventory', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -28,6 +58,9 @@ export default function NewInventoryPage() {
     if (response.ok) {
       router.push('/inventory')
       router.refresh()
+    } else {
+      const data = await response.json()
+      setError(data.error || 'Failed to add device')
     }
   }
 
@@ -103,12 +136,14 @@ export default function NewInventoryPage() {
                 </label>
                 <select
                   value={formData.condition}
-                  onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
+                  onChange={(e) => handleConditionChange(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="WORKING">Working</option>
-                  <option value="NOT_WORKING">Not Working</option>
-                  <option value="DISCARDED">Discarded</option>
+                  {allowedConditionsForLocation(formData.location).map((c) => (
+                    <option key={c} value={c}>
+                      {CONDITION_LABELS[c]}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -118,15 +153,31 @@ export default function NewInventoryPage() {
                 </label>
                 <select
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  onChange={(e) => handleLocationChange(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="IN_OFFICE">In Office</option>
-                  <option value="AT_SCHOOL">At School</option>
-                  <option value="DISCARDED">Discarded</option>
+                  {LOCATIONS.filter((l) =>
+                    allowedLocationsForCondition(formData.condition).includes(l)
+                  ).map((l) => (
+                    <option key={l} value={l}>
+                      {LOCATION_LABELS[l]}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
+
+            {statusHint(formData.location, formData.condition) && (
+              <div className="text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                {statusHint(formData.location, formData.condition)}
+              </div>
+            )}
+
+            {error && (
+              <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+                {error}
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

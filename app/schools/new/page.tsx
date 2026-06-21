@@ -65,7 +65,10 @@ export default function NewSchoolPage() {
     }
   }
 
+  const [error, setError] = useState('')
+
   const handleFinalSubmit = async () => {
+    setError('')
     const response = await fetch('/api/schools', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -79,6 +82,9 @@ export default function NewSchoolPage() {
       const result = await response.json()
       setCreatedDevices(result.devices || [])
       setStep(3) // Go to success screen
+    } else {
+      const data = await response.json().catch(() => ({}))
+      setError(data.error || 'Something went wrong. Please try again.')
     }
   }
 
@@ -261,6 +267,13 @@ export default function NewSchoolPage() {
                 Add Another Device Type
               </button>
             </div>
+
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p className="text-red-800 text-sm font-medium">❌ {error}</p>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="bg-white rounded-xl shadow-lg p-6">

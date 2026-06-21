@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 type InventoryItem = {
@@ -19,7 +18,6 @@ type InventoryItem = {
 }
 
 export default function UpdateInventoryPage() {
-  const router = useRouter()
   const [items, setItems] = useState<InventoryItem[]>([])
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([])
   const [schools, setSchools] = useState<any[]>([])
@@ -109,6 +107,31 @@ export default function UpdateInventoryPage() {
       setItems(Array.isArray(data) ? data : [])
       setSelectedItems(new Set())
       setBulkUpdate({ location: '', condition: '' })
+    } else {
+      const data = await response.json().catch(() => ({}))
+      alert(data.error || 'Failed to update items')
+    }
+  }
+
+  // Discarded is terminal: selecting it in one field forces the other to Discarded too.
+  const handleBulkLocationChange = (location: string) => {
+    if (location === 'DISCARDED') {
+      setBulkUpdate({ location: 'DISCARDED', condition: 'DISCARDED' })
+    } else if (bulkUpdate.condition === 'DISCARDED') {
+      // Moving away from Discarded location: clear the forced Discarded condition
+      setBulkUpdate({ location, condition: '' })
+    } else {
+      setBulkUpdate({ ...bulkUpdate, location })
+    }
+  }
+
+  const handleBulkConditionChange = (condition: string) => {
+    if (condition === 'DISCARDED') {
+      setBulkUpdate({ location: 'DISCARDED', condition: 'DISCARDED' })
+    } else if (bulkUpdate.location === 'DISCARDED') {
+      setBulkUpdate({ location: '', condition })
+    } else {
+      setBulkUpdate({ ...bulkUpdate, condition })
     }
   }
 
@@ -184,12 +207,13 @@ export default function UpdateInventoryPage() {
                 <label className="block text-sm font-medium text-blue-900 mb-2">Update Location</label>
                 <select
                   value={bulkUpdate.location}
-                  onChange={(e) => setBulkUpdate({ ...bulkUpdate, location: e.target.value })}
+                  onChange={(e) => handleBulkLocationChange(e.target.value)}
                   className="w-full px-3 py-2 border border-blue-300 rounded-lg"
                 >
                   <option value="">-- No Change --</option>
                   <option value="IN_OFFICE">In Office</option>
                   <option value="AT_SCHOOL">At School</option>
+                  <option value="VENDOR">At Vendor</option>
                   <option value="DISCARDED">Discarded</option>
                 </select>
               </div>
@@ -198,7 +222,7 @@ export default function UpdateInventoryPage() {
                 <label className="block text-sm font-medium text-blue-900 mb-2">Update Condition</label>
                 <select
                   value={bulkUpdate.condition}
-                  onChange={(e) => setBulkUpdate({ ...bulkUpdate, condition: e.target.value })}
+                  onChange={(e) => handleBulkConditionChange(e.target.value)}
                   className="w-full px-3 py-2 border border-blue-300 rounded-lg"
                 >
                   <option value="">-- No Change --</option>

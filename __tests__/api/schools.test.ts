@@ -169,11 +169,26 @@ describe('POST /api/schools', () => {
     expect(mockPrisma.inventory.update).not.toHaveBeenCalled()
   })
 
-  it('should return 500 on error', async () => {
+  it('should return 409 on duplicate school', async () => {
     mockPrisma.school.create.mockRejectedValue(new Error('Unique constraint violation'))
 
     const req = createRequest({
       school: { schoolId: 'SCH001', name: 'Duplicate' },
+      devices: [],
+    })
+
+    const response = await POST(req)
+    const data = await response.json()
+
+    expect(response.status).toBe(409)
+    expect(data.error).toContain('already exists')
+  })
+
+  it('should return 500 on generic error', async () => {
+    mockPrisma.school.create.mockRejectedValue(new Error('Connection timeout'))
+
+    const req = createRequest({
+      school: { schoolId: 'SCH001', name: 'Test' },
       devices: [],
     })
 

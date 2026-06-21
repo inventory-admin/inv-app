@@ -51,7 +51,6 @@ describe('GET /api/inventory-list', () => {
           },
         },
       },
-      orderBy: [{ itemTag: 'asc' }, { itemName: 'asc' }],
     })
   })
 
@@ -74,16 +73,21 @@ describe('GET /api/inventory-list', () => {
     expect(data.error).toBe('Failed to fetch inventory')
   })
 
-  it('should order items by itemTag then itemName ascending', async () => {
-    mockPrisma.inventory.findMany.mockResolvedValue([])
+  it('should order items by tag with natural numeric sorting', async () => {
+    const mockItems = [
+      { id: 1, itemTag: 'SCH/10/ups', itemName: 'UPS', school: null },
+      { id: 2, itemTag: 'SCH/2/ups', itemName: 'UPS', school: null },
+      { id: 3, itemTag: 'SCH/1/ups', itemName: 'UPS', school: null },
+    ]
+    mockPrisma.inventory.findMany.mockResolvedValue(mockItems)
 
-    await GET()
+    const response = await GET()
+    const data = await response.json()
 
-    expect(mockPrisma.inventory.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderBy: [{ itemTag: 'asc' }, { itemName: 'asc' }],
-      })
-    )
+    // Should be sorted: 1, 2, 10 (not 1, 10, 2)
+    expect(data[0].itemTag).toBe('SCH/1/ups')
+    expect(data[1].itemTag).toBe('SCH/2/ups')
+    expect(data[2].itemTag).toBe('SCH/10/ups')
   })
 
   it('should include school id and name only', async () => {

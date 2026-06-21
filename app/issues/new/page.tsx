@@ -13,6 +13,7 @@ function NewIssueForm() {
     inventoryId: inventoryId || '',
     issueType: 'HARDWARE_FAILURE',
     description: '',
+    troubleshootingDone: false,
     reportedBy: 'Admin',
   })
 
@@ -20,6 +21,8 @@ function NewIssueForm() {
   const [filteredInventory, setFilteredInventory] = useState<any[]>([])
   const [schools, setSchools] = useState<any[]>([])
   const [selectedItem, setSelectedItem] = useState<any>(null)
+  
+  const [error, setError] = useState('')
   
   // Filters
   const [filterSchool, setFilterSchool] = useState('all')
@@ -64,6 +67,7 @@ function NewIssueForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
 
     const response = await fetch('/api/issues', {
       method: 'POST',
@@ -78,6 +82,9 @@ function NewIssueForm() {
     if (response.ok) {
       router.push('/issues')
       router.refresh()
+    } else {
+      const data = await response.json().catch(() => ({}))
+      setError(data.error || 'Failed to report issue. Please try again.')
     }
   }
 
@@ -242,6 +249,19 @@ function NewIssueForm() {
               />
             </div>
 
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="troubleshootingDone"
+                checked={formData.troubleshootingDone}
+                onChange={(e) => setFormData({ ...formData, troubleshootingDone: e.target.checked })}
+                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="troubleshootingDone" className="text-sm text-gray-700">
+                Troubleshooting was attempted by the facilitator/associate before reporting
+              </label>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Reported By
@@ -254,6 +274,12 @@ function NewIssueForm() {
                 placeholder="Your name"
               />
             </div>
+
+            {error && (
+              <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+                ❌ {error}
+              </div>
+            )}
 
             <div className="flex gap-4 pt-4">
               <button

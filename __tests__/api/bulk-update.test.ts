@@ -24,6 +24,12 @@ describe('POST /api/inventory/bulk-update', () => {
   beforeEach(() => {
     resetAllMocks()
     ;(revalidatePath as jest.Mock).mockClear()
+    // Default: findMany returns items with valid existing state
+    mockPrisma.inventory.findMany.mockResolvedValue([
+      { id: 1, location: 'AT_SCHOOL', condition: 'WORKING' },
+      { id: 2, location: 'AT_SCHOOL', condition: 'WORKING' },
+      { id: 3, location: 'IN_OFFICE', condition: 'WORKING' },
+    ])
   })
 
   it('should update location for multiple items', async () => {
@@ -50,7 +56,7 @@ describe('POST /api/inventory/bulk-update', () => {
     mockPrisma.inventory.updateMany.mockResolvedValue({ count: 2 })
 
     const req = createRequest({
-      itemIds: [4, 5],
+      itemIds: [1, 2],
       location: '',
       condition: 'NOT_WORKING',
     })
@@ -60,18 +66,46 @@ describe('POST /api/inventory/bulk-update', () => {
 
     expect(data.success).toBe(true)
     expect(mockPrisma.inventory.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: [4, 5] } },
+      where: { id: { in: [1, 2] } },
       data: expect.objectContaining({ condition: 'NOT_WORKING' }),
     })
   })
 
-  it('should update both location and condition', async () => {
+  it('should update both location and condition to DISCARDED', async () => {
     mockPrisma.inventory.updateMany.mockResolvedValue({ count: 1 })
+    mockPrisma.inventory.findMany.mockResolvedValue([
+      { id: 1, location: 'IN_OFFICE', condition: 'NOT_WORKING' },
+    ])
 
     const req = createRequest({
       itemIds: [1],
       location: 'DISCARDED',
       condition: 'DISCARDED',
+    })
+
+    const response = await POST(req)
+    const data = await response.json()
+
+    expect(data.success).toBe(true)
+    expect(mockPrisma.inventory.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: [1] } },
+      data: expect.objectContaining({
+        location: 'DISCARDED',
+        condition: 'DISCARDED',
+      }),
+    })
+  })
+
+  it('should force both to DISCARDED when only location is DISCARDED', async () => {
+    mockPrisma.inventory.updateMany.mockResolvedValue({ count: 1 })
+    mockPrisma.inventory.findMany.mockResolvedValue([
+      { id: 1, location: 'IN_OFFICE', condition: 'NOT_WORKING' },
+    ])
+
+    const req = createRequest({
+      itemIds: [1],
+      location: 'DISCARDED',
+      condition: '',
     })
 
     const response = await POST(req)
@@ -134,6 +168,7 @@ describe('POST /api/inventory/bulk-update', () => {
   })
 
   it('should return 500 on error', async () => {
+    mockPrisma.inventory.findMany.mockResolvedValue([{ id: 1, location: 'AT_SCHOOL', condition: 'WORKING' }])
     mockPrisma.inventory.updateMany.mockRejectedValue(new Error('DB error'))
 
     const req = createRequest({
@@ -149,9 +184,7 @@ describe('POST /api/inventory/bulk-update', () => {
     expect(data.error).toBe('Failed to bulk update inventory')
   })
 
-  it('should handle empty itemIds array', async () => {
-    mockPrisma.inventory.updateMany.mockResolvedValue({ count: 0 })
-
+  it('should return 400 for empty itemIds array', async () => {
     const req = createRequest({
       itemIds: [],
       location: 'AT_SCHOOL',
@@ -161,16 +194,49 @@ describe('POST /api/inventory/bulk-update', () => {
     const response = await POST(req)
     const data = await response.json()
 
-    expect(data.success).toBe(true)
-    expect(data.updated).toBe(0)
+    expect(response.status).toBe(400)
+    expect(data.error).toBe('No items selected')
   })
 
-  it('should handle non-existent item IDs gracefully', async () => {
-    mockPrisma.inventory.updateMany.mockResolvedValueOnce({ count: 0 })
+  it('should block invalid combinations', async () => {
+    mockPrisma.inventory.findMany.mockResolvedValue([
+      { id: 1, location: 'AT_SCHOOL', condition: 'WORKING' },
+    ])
+
+    // Setting condition to DISCARDED without setting location to DISCARDED
+    // but since our logic forces both to DISCARDED, this should actually succeed
+    // Let's test setting location=AT_SCHOOL + condition=DISCARDED (via direct request)
+    // We need to bypass the force logic — that only triggers if one is DISCARDED,
+    // but here both will be forced. Let's test an actually invalid combo
+    // by having an item AT_SCHOOL and only changing condition to DISCARDED:
+    // The force logic will set BOTH to discarded so this actually passes.
+    // Real test: item currently DISCARDED, try to set just location to AT_SCHOOL (no condition change)
+    mockPrisma.inventory.findMany.mockResolvedValue([
+      { id: 1, location: 'DISCARDED', condition: 'DISCARDED' },
+    ])
 
     const req = createRequest({
-      itemIds: [9999, 8888],
+      itemIds: [1],
       location: 'AT_SCHOOL',
+      condition: '', // no change -> stays DISCARDED
+    })
+
+    const response = await POST(req)
+    const data = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(data.error).toContain('not a valid combination')
+  })
+
+  it('should allow VENDOR location with NOT_WORKING condition', async () => {
+    mockPrisma.inventory.findMany.mockResolvedValue([
+      { id: 1, location: 'IN_OFFICE', condition: 'NOT_WORKING' },
+    ])
+    mockPrisma.inventory.updateMany.mockResolvedValue({ count: 1 })
+
+    const req = createRequest({
+      itemIds: [1],
+      location: 'VENDOR',
       condition: '',
     })
 
@@ -178,23 +244,5 @@ describe('POST /api/inventory/bulk-update', () => {
     const data = await response.json()
 
     expect(data.success).toBe(true)
-    expect(data.updated).toBe(0)
-  })
-
-  it('should handle both fields empty (no-op update)', async () => {
-    mockPrisma.inventory.updateMany.mockResolvedValue({ count: 1 })
-
-    const req = createRequest({
-      itemIds: [1],
-      location: '',
-      condition: '',
-    })
-
-    const response = await POST(req)
-
-    expect(mockPrisma.inventory.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: [1] } },
-      data: expect.objectContaining({ updatedAt: expect.any(Date) }),
-    })
   })
 })

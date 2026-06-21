@@ -69,8 +69,18 @@ export async function POST(request: Request) {
       school: createdSchool, 
       devices: createdDevices 
     }, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating school:', error)
+    
+    // Check for unique constraint violations
+    const message = error?.message || ''
+    if (message.includes('Unique constraint') || message.includes('unique')) {
+      return NextResponse.json(
+        { error: 'A school with this ID or name already exists. Please use a different School ID or Name.' },
+        { status: 409 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Failed to create school' },
       { status: 500 }

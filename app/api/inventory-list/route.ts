@@ -18,7 +18,35 @@ export async function GET() {
           },
         },
       },
-      orderBy: [{ itemTag: 'asc' }, { itemName: 'asc' }],
+    })
+
+    // Natural sort: extract numeric part from tag for proper ordering
+    // e.g., "GPS6/1/ups" < "GPS6/2/ups" < "GPS6/10/ups"
+    inventory.sort((a, b) => {
+      const tagA = a.itemTag || ''
+      const tagB = b.itemTag || ''
+      if (!tagA && !tagB) return a.itemName.localeCompare(b.itemName)
+      if (!tagA) return 1
+      if (!tagB) return -1
+
+      const partsA = tagA.split('/')
+      const partsB = tagB.split('/')
+
+      for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+        const pA = partsA[i] || ''
+        const pB = partsB[i] || ''
+        const numA = parseInt(pA)
+        const numB = parseInt(pB)
+
+        // If both parts are numeric, compare numerically
+        if (!isNaN(numA) && !isNaN(numB)) {
+          if (numA !== numB) return numA - numB
+        } else {
+          const cmp = pA.localeCompare(pB)
+          if (cmp !== 0) return cmp
+        }
+      }
+      return 0
     })
 
     return NextResponse.json(inventory)

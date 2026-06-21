@@ -126,6 +126,16 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
+
+        {/* Admin Footer */}
+        <div className="mt-16 pt-6 border-t border-gray-200 text-center">
+          <Link
+            href="/admin/delete-devices"
+            className="text-xs text-gray-400 hover:text-gray-600"
+          >
+            Admin
+          </Link>
+        </div>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { updateInventory } from '../actions'
+import StatusFields from '../StatusFields'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -86,23 +87,7 @@ export default async function EditInventoryPage({ params }: { params: { id: stri
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Condition *</label>
-          <select name="condition" className="w-full border rounded px-3 py-2" defaultValue={item.condition}>
-            <option value="WORKING">Working</option>
-            <option value="NOT_WORKING">Not Working</option>
-            <option value="DISCARDED">Discarded</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Location *</label>
-          <select name="location" className="w-full border rounded px-3 py-2" defaultValue={item.location}>
-            <option value="IN_OFFICE">In Office</option>
-            <option value="AT_SCHOOL">At School</option>
-            <option value="DISCARDED">Discarded</option>
-          </select>
-        </div>
+        <StatusFields initialLocation={item.location} initialCondition={item.condition} />
 
         <div>
           <label className="block text-sm font-medium mb-1">School</label>
@@ -123,18 +108,6 @@ export default async function EditInventoryPage({ params }: { params: { id: stri
             rows={3}
             defaultValue={item.notes || ''}
             className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Min Stock Level</label>
-          <input
-            type="number"
-            name="minStockLevel"
-            min="0"
-            defaultValue={item.minStockLevel || ''}
-            className="w-full border rounded px-3 py-2"
-            placeholder="Optional"
           />
         </div>
 

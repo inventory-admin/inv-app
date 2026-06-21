@@ -12,6 +12,8 @@ type InventoryItem = {
   location: string
   itemId: string | null
   itemTag: string | null
+  lastModifiedBy: string
+  updatedAt: string
   school: {
     id: number
     name: string
@@ -184,6 +186,7 @@ export default function InventoryPage() {
                 <option value="all">All Locations</option>
                 <option value="IN_OFFICE">In Office</option>
                 <option value="AT_SCHOOL">At School</option>
+                <option value="VENDOR">At Vendor</option>
                 <option value="DISCARDED">Discarded</option>
               </select>
             </div>
@@ -287,6 +290,9 @@ export default function InventoryPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Action
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Last Edited
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -341,6 +347,10 @@ export default function InventoryPage() {
                             History
                           </Link>
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                        <div>{item.lastModifiedBy}</div>
+                        <div>{new Date(item.updatedAt).toLocaleDateString()}</div>
                       </td>
                     </tr>
                   ))}

@@ -24,7 +24,6 @@ model Inventory {
   location       Location  @default(IN_OFFICE)
   condition      Condition @default(WORKING)
   quantity       Int       @default(1)
-  minStockLevel  Int?
   itemTag        String?
   schoolId       Int?
   school         School?   @relation(fields: [schoolId], references: [id])
@@ -38,6 +37,7 @@ model Inventory {
 enum Location {
   IN_OFFICE
   AT_SCHOOL
+  VENDOR
   DISCARDED
 }
 
@@ -61,17 +61,18 @@ enum Condition {
 }
 
 model Issue {
-  id          Int         @id @default(autoincrement())
-  inventoryId Int
-  inventory   Inventory   @relation(fields: [inventoryId], references: [id])
-  schoolId    Int?
-  school      School?     @relation(fields: [schoolId], references: [id])
-  issueType   IssueType
-  description String
-  status      IssueStatus @default(OPEN)
-  reportedBy  String
-  reportedAt  DateTime    @default(now())
-  resolvedAt  DateTime?
+  id                 Int         @id @default(autoincrement())
+  inventoryId        Int
+  inventory          Inventory   @relation(fields: [inventoryId], references: [id])
+  schoolId           Int?
+  school             School?     @relation(fields: [schoolId], references: [id])
+  issueType          IssueType
+  description        String
+  troubleshootingDone Boolean    @default(false)
+  status             IssueStatus @default(OPEN)
+  reportedBy         String
+  reportedAt         DateTime    @default(now())
+  resolvedAt         DateTime?
 }
 
 enum IssueType {

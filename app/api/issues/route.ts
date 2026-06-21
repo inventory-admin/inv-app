@@ -23,6 +23,7 @@ export async function POST(request: Request) {
           schoolId: data.schoolId,
           issueType: data.issueType,
           description: data.description,
+          troubleshootingDone: data.troubleshootingDone || false,
           reportedBy: data.reportedBy,
         },
       }),

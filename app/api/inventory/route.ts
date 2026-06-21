@@ -1,9 +1,17 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { isValidCombo } from '@/lib/inventory-status'
 
 export async function POST(request: Request) {
   try {
     const data = await request.json()
+
+    if (!isValidCombo(data.location, data.condition)) {
+      return NextResponse.json(
+        { error: `Invalid combination: ${data.location} cannot be paired with ${data.condition}` },
+        { status: 400 }
+      )
+    }
 
     const inventory = await prisma.inventory.create({
       data: {

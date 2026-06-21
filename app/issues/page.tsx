@@ -110,6 +110,9 @@ export default async function IssuesPage() {
                     </div>
                   </div>
                   <p className="text-gray-700 text-sm">{issue.description}</p>
+                  {issue.troubleshootingDone && (
+                    <p className="text-xs text-green-700 mt-1">✓ Troubleshooting attempted</p>
+                  )}
                   <IssueActions
                     issueId={issue.id}
                     inventoryItemName={issue.inventory.itemName}
